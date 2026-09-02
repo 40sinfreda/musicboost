@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MusicBoost Ignite Records</title>
+  <meta name="theme-color" content="#0a0a0b" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root { --bg:#0a0a0b; --surface:#121214; --elev:#1a1a1e; --fg:#f4f4f5; --muted:#a1a1aa; --subtle:#71717a; --border:#27272a; --accent:#e4e4e7; --accent-fg:#0a0a0b; --danger:#f87171; --warn:#e8d5a3; }
+    * { box-sizing: border-box; }
+    html, body { margin:0; background:var(--bg); color:var(--fg); font-family:Heebo,sans-serif; min-height:100%; }
+    button:not(:disabled) { cursor:pointer; }
+    a { color:inherit; }
+    header { border-bottom:1px solid var(--border); }
+    .wrap { max-width:760px; margin:0 auto; padding:16px; }
+    .brand { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .logo { width:40px; height:40px; border-radius:8px; background:var(--accent); color:var(--accent-fg); display:grid; place-items:center; font-weight:700; }
+    h1 { font-size:1.75rem; margin:1.5rem 0 .5rem; }
+    p.lead { color:var(--muted); line-height:1.6; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:20px; margin-top:20px; }
+    label { display:block; font-size:.85rem; margin:14px 0 6px; }
+    input, textarea, select { width:100%; height:44px; border-radius:8px; border:1px solid var(--border); background:var(--elev); color:var(--fg); padding:0 12px; font:inherit; }
+    textarea { height:auto; padding:10px 12px; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; }
+    .btn { height:44px; border:0; border-radius:8px; padding:0 16px; font:inherit; font-weight:500; background:var(--accent); color:var(--accent-fg); }
+    .btn.ghost { background:transparent; border:1px solid var(--border); color:var(--fg); }
+    .btn:disabled { opacity:.45; }
+    .chip { height:36px; border-radius:999px; border:1px solid var(--border); background:transparent; color:var(--muted); padding:0 12px; font:inherit; }
+    .chip.on { border-color:var(--accent); background:var(--elev); color:var(--fg); }
+    .err { color:var(--danger); border:1px solid rgba(248,113,113,.3); background:var(--elev); padding:10px 12px; border-radius:8px; font-size:14px; }
+    .ok { border:1px solid rgba(74,222,128,.3); background:var(--elev); padding:12px; border-radius:8px; font-size:14px; }
+    .muted { color:var(--muted); font-size:13px; line-height:1.55; }
+    .hero { width:100%; height:180px; object-fit:cover; border-radius:12px; margin-bottom:16px; background:var(--elev); }
+    .media { overflow:hidden; border:1px solid var(--border); border-radius:12px; margin-top:16px; }
+    .media img, .ph { width:100%; height:180px; object-fit:cover; background:var(--surface); display:block; }
+    .meta { display:grid; grid-template-columns:1fr 1fr; gap:0; padding:12px 16px; }
+    .meta div { padding:8px 0; }
+    .meta dt { font-size:11px; color:var(--subtle); }
+    .meta dd { margin:2px 0 0; font-weight:600; }
+    .song { padding:0 16px 16px; }
+    .song h3 { margin:0; font-size:1.2rem; }
+    .steps { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin:20px 0; }
+    .step { border:1px solid var(--border); border-radius:999px; padding:8px 6px; font-size:12px; color:var(--subtle); text-align:center; }
+    .step.on { color:var(--fg); background:var(--surface); }
+    .kv { display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); font-size:14px; }
+    .kv dt { color:var(--muted); } .kv dd { margin:0; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .hidden { display:none !important; }
+    @media (max-width:640px) { .steps { grid-template-columns:1fr 1fr; } .meta { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap brand">
+    <div style="display:flex;gap:12px;align-items:center">
+      <div class="logo">MB</div>
+      <div>
+        <div style="font-weight:600">MusicBoost</div>
+        <div class="muted">Ignite Records קידום יוטיוב וספוטיפיי</div>
+      </div>
+    </div>
+    <button class="btn ghost" id="metaBtn" type="button">התחבר למטא</button>
+  </div>
+</header>
+<main class="wrap">
+  <p class="muted" id="stepLabel">שלב 1 מתוך 5 קישור</p>
+  <p class="lead" style="margin-top:4px">5 צעדים לקראת הקמפיין שלך</p>
+  <div class="steps">
+    <div class="step on" data-s="1">קישור</div>
+    <div class="step" data-s="2">קהל</div>
+    <div class="step" data-s="3">תקציב</div>
+    <div class="step" data-s="4">מודעה</div>
+    <div class="step" data-s="5">סגירה</div>
+  </div>
+
+  <section class="card hidden" id="connectCard">
+    <h2 style="margin:0 0 8px;font-size:1.1rem">חיבור למטא, פעם אחת</h2>
+    <p class="muted">הדבק Access Token. הוא נשמר בדפדפן הזה ולא עולה לגיטהאב.</p>
+    <label>Access Token</label>
+    <input id="token" type="password" placeholder="EAAB..." autocomplete="off" />
+    <div class="row" style="margin-top:12px"><button class="btn" id="connectBtn" type="button">חבר ושמור בדפדפן</button></div>
+    <div id="connectErr" class="hidden" style="margin-top:12px"></div>
+    <div id="connectedBox" class="hidden" style="margin-top:14px">
+      <p id="who" class="muted"></p>
+      <label>חשבון מודעות</label><select id="accountSel"></select>
+      <label>דף פייסבוק</label><select id="pageSel"></select>
+      <button class="btn ghost" id="logoutBtn" type="button" style="margin-top:12px">התנתק</button>
+    </div>
+  </section>
+
+  <section class="card" id="step1">
+    <img class="hero" src="public/images/step-link.jpg" alt="" />
+    <h1>הדבק קישור</h1>
+    <p class="lead">יוטיוב או ספוטיפיי, שיר או פלייליסט. נזהה קטגוריה, מקור והשמעות.</p>
+    <div class="row" style="margin-top:12px">
+      <input id="url" placeholder="הדבק קישור לשיר או לפלייליסט" style="flex:1" />
+      <button class="btn" id="detectBtn" type="button">זהה</button>
+    </div>
+    <div id="detectErr" class="hidden" style="margin-top:12px"></div>
+    <div id="mediaBox" class="hidden"></div>
+    <div class="row" style="margin-top:16px;justify-content:flex-end">
+      <button class="btn" id="to2" type="button" disabled>המשך</button>
+    </div>
+  </section>
+
+  <section class="card hidden" id="step2">
+    <img class="hero" src="public/images/step-audience.jpg" alt="" />
+    <h1>קהל היעד</h1>
+    <p class="lead">יבשת, מדינות וטווח גילאים.</p>
+    <label>יבשת</label><div class="row" id="continents"></div>
+    <label>מדינות</label><div class="row" id="countries" style="max-height:180px;overflow:auto"></div>
+    <div class="row" style="margin-top:12px">
+      <div style="flex:1"><label>גיל מינימום</label><input id="ageMin" type="number" min="13" max="65" value="18" /></div>
+      <div style="flex:1"><label>גיל מקסימום</label><input id="ageMax" type="number" min="13" max="65" value="34" /></div>
+    </div>
+    <label>מגדר</label>
+    <div class="row" id="genders">
+      <button class="chip on" data-g="all" type="button">הכל</button>
+      <button class="chip" data-g="1" type="button">גברים</button>
+      <button class="chip" data-g="2" type="button">נשים</button>
+    </div>
+    <div class="row" style="margin-top:16px;justify-content:flex-end">
+      <button class="btn ghost" data-back="1" type="button">חזרה</button>
+      <button class="btn" id="to3" type="button">המשך</button>
+    </div>
+  </section>
+
+  <section class="card hidden" id="step3">
+    <img class="hero" src="public/images/step-budget.jpg" alt="" />
+    <h1>כמה משקיעים ביום</h1>
+    <p class="lead">בוחרים מטבע, סכום יומי ומשך הקמפיין. ₪10 עד ₪100 ליום, בקפיצות של 10.</p>
+    <label>מטבע</label>
+    <select id="currency" style="max-width:220px">
+      <option value="ILS">שקל (₪)</option>
+      <option value="USD">דולר ($)</option>
+      <option value="EUR">אירו (€)</option>
+    </select>
+    <label>תקציב יומי</label>
+    <div class="row" id="budgets"></div>
+    <label>משך הקמפיין</label>
+    <div class="row" id="days"></div>
+    <dl id="budgetSum" style="margin-top:16px"></dl>
+    <div class="row" style="margin-top:16px;justify-content:flex-end">
+      <button class="btn ghost" data-back="2" type="button">חזרה</button>
+      <button class="btn" id="to4" type="button">המשך</button>
+    </div>
+  </section>
+
+  <section class="card hidden" id="step4">
+    <img class="hero" src="public/images/step-ad.jpg" alt="" />
+    <h1>תוכן המודעה</h1>
+    <p class="lead" id="adLead">הטקסט הראשי נכתב לפי הסגנון שזוהה. אפשר לתקן לפני הסגירה.</p>
+    <label>כותרת המודעה</label><input id="adTitle" maxlength="40" />
+    <label>טקסט ראשי</label><textarea id="adBody" maxlength="50" rows="3"></textarea>
+    <p class="muted" id="adCount">עד 50 תווים.</p>
+    <label>קריאה לפעולה</label>
+    <select id="cta">
+      <option value="LISTEN_NOW">Listen Now</option>
+      <option value="LEARN_MORE">Learn More</option>
+      <option value="WATCH_MORE">Watch More</option>
+    </select>
+    <label>שם פנימי</label><input id="campName" />
+    <div class="row" style="margin-top:16px;justify-content:flex-end">
+      <button class="btn ghost" data-back="3" type="button">חזרה</button>
+      <button class="btn" id="to5" type="button">המשך</button>
+    </div>
+  </section>
+
+  <section class="card hidden" id="step5">
+    <img class="hero" src="public/images/step-done.jpg" alt="" />
+    <h1>סגירת עיסקה</h1>
+    <dl id="summary"></dl>
+    <div id="pubMsg"></div>
+    <div class="row" style="margin-top:16px;justify-content:flex-end">
+      <button class="btn ghost" data-back="4" type="button">חזרה</button>
+      <button class="btn" id="publishBtn" type="button">סגירת עיסקה</button>
+    </div>
+  </section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
