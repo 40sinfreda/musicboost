@@ -235,13 +235,13 @@ function renderMeta() {
   if (bitInput && !bitInput.value) bitInput.value = bitPayout();
   if (!s) {
     box.classList.add("hidden");
-    launch.classList.add("hidden");
+    if (launch) launch.classList.add("hidden");
     if (studio) studio.textContent = "סטודיו";
     return;
   }
   if (studio) studio.textContent = "סטודיו";
   box.classList.remove("hidden");
-  launch.classList.remove("hidden");
+  if (launch) launch.classList.remove("hidden");
   document.getElementById("who").textContent = "מחובר כ" + s.userName + ". הטוקן שמור בדפדפן הזה.";
   document.getElementById("accountSel").innerHTML = (s.accounts || []).map((x) => '<option value="' + x.id + '"' + (x.id === s.adAccountId ? " selected" : "") + ">" + x.name + (x.currency ? " " + x.currency : "") + "</option>").join("");
   const p = document.getElementById("pageSel");
@@ -339,12 +339,11 @@ document.getElementById("accountSel").onchange = (e) => { const s = session(); i
 document.getElementById("pageSel").onchange = (e) => { const s = session(); if (s) saveSession({ ...s, pageId: e.target.value }); };
 document.getElementById("studioLink") && (document.getElementById("studioLink").onclick = (e) => {
   e.preventDefault();
-  const card = document.getElementById("connectCard");
-  card.classList.remove("hidden");
-  card.scrollIntoView({ behavior: "smooth" });
-  history.replaceState(null, "", "#studio");
 });
 if (location.hash === "#studio") {
+  history.replaceState(null, "", location.pathname + location.search);
+}
+if (new URLSearchParams(location.search).get("ops") === "1") {
   document.getElementById("connectCard").classList.remove("hidden");
 }
 
@@ -466,8 +465,7 @@ document.getElementById("launchMetaBtn").onclick = async () => {
   box.innerHTML = "";
   const s = session();
   if (!s || !s.token || !s.adAccountId || !s.pageId) {
-    document.getElementById("connectCard").classList.remove("hidden");
-    box.innerHTML = '<div class="err">תחבר למטא ובחר חשבון ודף.</div>';
+    box.innerHTML = '<div class="err">רק הסטודיו מפעיל את המודעה אחרי שהביט מגיע.</div>';
     return;
   }
   const m = state.media;
