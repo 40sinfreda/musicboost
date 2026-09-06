@@ -94,7 +94,8 @@ async function graph(path, token, opts = {}) {
 }
 
 function parseLink(raw) {
-  const t = (raw || "").trim();
+  const extracted = extractUrl(raw);
+  const t = (extracted || "").trim();
   if (!t) return { ok: false, error: "חסר קישור" };
   const uri = t.match(/^spotify:(track|playlist):([A-Za-z0-9]+)/i);
   if (uri) {
@@ -129,8 +130,11 @@ function parseLink(raw) {
 }
 
 async function fetchMeta(media) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 4500);
   try {
-    const r = await fetch("https://noembed.com/embed?url=" + encodeURIComponent(media.canonicalUrl));
+    const r = await fetch("https://noembed.com/embed?url=" + encodeURIComponent(media.canonicalUrl), { signal: ctrl.signal });
+    clearTimeout(timer);
     if (!r.ok) return media;
     const j = await r.json();
     const split = splitSongArtist(j.title || "", j.author_name || "");
@@ -140,7 +144,27 @@ async function fetchMeta(media) {
       author: split.artist || j.author_name || "",
       thumbnail: j.thumbnail_url || media.thumbnail || "",
     };
-  } catch { return media; }
+  } catch {
+    clearTimeout(timer);
+    return media;
+  }
+}
+
+function extractUrl(raw) {
+  const text = String(raw || "").trim();
+  const spotify = text.match(/spotify:(track|playlist):[A-Za-z0-9]+/i);
+  if (spotify) return spotify[0];
+  const http = text.match(/https?:\/\/[^\s<>"']+/i);
+  if (http) return http[0].replace(/[.,;:!?]+$/, "");
+  return text;
+}
+
+function esc(value) {
+  return String(value || "")
+    .replace(/&/g, "&")
+    .replace(/</g, "<")
+    .replace(/>/g, ">")
+    .replace(/"/g, """);
 }
 
 function showErr(id, msg) {
@@ -297,32 +321,54 @@ if (location.hash === "#studio") {
   document.getElementById("connectCard").classList.remove("hidden");
 }
 
-document.getElementById("detectBtn").onclick = async () => {
+async function runDetect(raw) {
   hide("detectErr");
-  const parsed = parseLink(document.getElementById("url").value);
+  const btn = document.getElementById("detectBtn");
+  const parsed = parseLink(raw != null ? raw : document.getElementById("url").value);
   if (!parsed.ok) return showErr("detectErr", parsed.error);
-  const media = await fetchMeta({ ...parsed.data, title: "", author: "" });
-  if (!media.title) media.title = media.contentType === "playlist" ? "פלייליסט" : "שיר";
+  document.getElementById("url").value = parsed.data.canonicalUrl;
+  btn.disabled = true;
+  btn.textContent = "מזהה...";
+  const skeleton = { ...parsed.data, title: parsed.data.contentType === "playlist" ? "פלייליסט" : "שיר", author: "" };
+  paintMedia(skeleton);
+  document.getElementById("to2").disabled = false;
+  try {
+    const media = await fetchMeta(skeleton);
+    if (!media.title) media.title = skeleton.title;
+    paintMedia(media);
+    const src = media.platform === "youtube" ? "יוטיוב" : "ספוטיפיי";
+    document.getElementById("adTitle").value = media.title.slice(0, 40);
+    document.getElementById("adBody").value = adCopy(media, audienceLang());
+    const now = new Date();
+    const d = now.getDate() + "." + (now.getMonth() + 1) + "." + now.getFullYear();
+    document.getElementById("campName").value = "MusicBoost " + src + " " + media.title.slice(0, 24) + " " + d;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "זהה";
+  }
+}
+
+function paintMedia(media) {
   state.media = media;
   const cat = media.contentType === "playlist" ? "פלייליסט" : "שיר";
   const src = media.platform === "youtube" ? "יוטיוב" : "ספוטיפיי";
   const plays = formatPlays(media.plays);
   document.getElementById("mediaBox").className = "media";
   document.getElementById("mediaBox").innerHTML =
-    (media.thumbnail ? '<img src="' + media.thumbnail + '" alt="" />' : '<div class="ph"></div>') +
+    (media.thumbnail ? '<img src="' + esc(media.thumbnail) + '" alt="" />' : '<div class="ph"></div>') +
     '<dl class="meta">' +
       "<div><dt>קטגוריה</dt><dd>" + cat + "</dd></div>" +
       "<div><dt>מקור</dt><dd>" + src + "</dd></div>" +
       (plays ? "<div><dt>השמעות</dt><dd>" + plays + "</dd></div>" : "") +
     "</dl>" +
-    '<div class="song"><h3>' + media.title + "</h3><p class='muted'>" + (media.author || "") + "</p></div>";
-  document.getElementById("to2").disabled = false;
-  document.getElementById("adTitle").value = media.title.slice(0, 40);
-  document.getElementById("adBody").value = adCopy(media, audienceLang());
-  const now = new Date();
-  const d = now.getDate() + "." + (now.getMonth() + 1) + "." + now.getFullYear();
-  document.getElementById("campName").value = "MusicBoost " + src + " " + media.title.slice(0, 24) + " " + d;
-};
+    '<div class="song"><h3>' + esc(media.title) + "</h3><p class='muted'>" + esc(media.author || "") + "</p></div>";
+}
+
+document.getElementById("detectBtn").onclick = () => void runDetect();
+document.getElementById("url").addEventListener("paste", (e) => {
+  const text = e.clipboardData.getData("text");
+  window.setTimeout(() => void runDetect(text), 0);
+});
 
 document.getElementById("to2").onclick = () => { renderContinents(); setStep(2); };
 document.getElementById("to3").onclick = () => { if (!state.countries.length) return; setStep(3); };

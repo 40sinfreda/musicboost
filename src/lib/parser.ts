@@ -25,6 +25,16 @@ export type ParseResult =
   | { ok: true; data: ParsedMedia }
   | { ok: false; error: string };
 
+export function extractMediaUrl(raw: string): string {
+  const text = String(raw || "").trim();
+  if (!text) return "";
+  const spotify = text.match(/spotify:(track|playlist):[A-Za-z0-9]+/i);
+  if (spotify) return spotify[0];
+  const http = text.match(/https?:\/\/[^\s<>"'）)]+/i);
+  if (http) return http[0].replace(/[.,;:!?]+$/, "");
+  return text;
+}
+
 export type MediaMeta = ParsedMedia & {
   title: string;
   author: string;
@@ -190,7 +200,8 @@ function isUnsupported(value: ParsedMedia | UnsupportedSpotify): value is Unsupp
 
 export function parseMediaLink(raw: string): ParseResult {
   if (!raw || typeof raw !== "string") return { ok: false, error: "חסר קישור" };
-  const trimmed = raw.trim();
+  const trimmed = extractMediaUrl(raw);
+  if (!trimmed) return { ok: false, error: "חסר קישור" };
 
   if (/^spotify:/i.test(trimmed)) {
     const parsed = parseSpotify(trimmed, null);

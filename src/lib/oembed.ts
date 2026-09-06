@@ -197,7 +197,7 @@ async function fetchSpotify(data: z.infer<typeof Input>): Promise<DraftMeta> {
   const kind = data.contentType === "playlist" ? "playlist" : "track";
   const [embed, oembed] = await Promise.all([
     getText(`https://open.spotify.com/embed/${kind}/${data.id}`),
-    getJson(`https://open.spotify.com/oembed?url=${encodeURIComponent(data.url)}`),
+    getJson(`https://noembed.com/embed?url=${encodeURIComponent(data.url)}`),
   ]);
   const entity = parseSpotifyEntity(embed);
   const artists = Array.isArray(entity?.artists)
@@ -282,7 +282,7 @@ async function ytPost(path: string, body: Record<string, unknown>) {
       method: "POST",
       headers: { "Content-Type": "application/json", "User-Agent": UA },
       body: JSON.stringify({ context: YT_CONTEXT, ...body }),
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(4000),
     });
     if (!res.ok) return null;
     return (await res.json()) as Record<string, unknown>;
@@ -295,7 +295,7 @@ async function getJson(url: string) {
   try {
     const res = await fetch(url, {
       headers: { Accept: "application/json", "User-Agent": UA },
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(4000),
     });
     if (!res.ok) return null;
     return (await res.json()) as Record<string, unknown>;
@@ -308,7 +308,7 @@ async function getText(url: string) {
   try {
     const res = await fetch(url, {
       headers: { Accept: "text/html", "User-Agent": UA },
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(4000),
     });
     if (!res.ok) return null;
     return await res.text();
