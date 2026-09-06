@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Navigate, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Copy, Loader2, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { CURRENCY_SYMBOL, snapDailyBudget, draftTotals, useBoostDraft } from "@/lib/boost-draft";
-import { submitCampaign } from "@/lib/boost-server";
+import { getBoostSession, submitCampaign } from "@/lib/boost-server";
 import { GEO } from "@/lib/geo";
 
 export const Route = createFileRoute("/boost/pay")({ component: BoostPay });
@@ -28,18 +28,38 @@ function PayForm({ email, name }: { email: string; name: string }) {
   const patch = draft.patch;
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState("");
+  const [payout, setPayout] = useState("");
 
   useEffect(() => {
     if (!draft.receiptEmail && email) patch({ receiptEmail: email });
-  }, [draft.receiptEmail, email, patch]);
+    if (draft.currency !== "ILS") patch({ currency: "ILS" });
+  }, [draft.receiptEmail, draft.currency, email, patch]);
+
+  useEffect(() => {
+    void getBoostSession()
+      .then((s) => setPayout(s.payoutNote || ""))
+      .catch(() => undefined);
+  }, []);
 
   const { totalCents } = draftTotals(draft.dailyBudget, draft.days);
-  const symbol = CURRENCY_SYMBOL[draft.currency];
+  const symbol = CURRENCY_SYMBOL.ILS;
+  const amount = `${symbol}${totalCents / 100}`;
   const media = draft.media!;
   const countryNames = GEO[draft.continent].countries
     .filter((c) => draft.countries.includes(c.code))
     .map((c) => c.name)
     .join(", ");
+
+  async function copyText(value: string, label: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(label);
+      window.setTimeout(() => setCopied(""), 2000);
+    } catch {
+      setCopied("");
+    }
+  }
 
   async function finish() {
     const receipt = draft.receiptEmail.trim() || email;
@@ -81,9 +101,10 @@ function PayForm({ email, name }: { email: string; name: string }) {
           },
           dailyBudgetMajor: budget,
           days: draft.days,
-          currency: draft.currency,
+          currency: "ILS",
           receiptEmail: receipt,
           audienceLabel: countryNames || "לא נבחר",
+          method: "bit",
         },
       });
       await navigate({
@@ -106,9 +127,9 @@ function PayForm({ email, name }: { email: string; name: string }) {
         alt=""
         className="mb-6 h-48 w-full rounded-xl object-cover sm:h-56"
       />
-      <h1 className="text-3xl font-semibold tracking-tight">סגירת העיסקה</h1>
+      <h1 className="text-3xl font-semibold tracking-tight">תשלום בביט</h1>
       <p className="mt-2 text-base leading-relaxed text-muted">
-        שלום {name}. אחרי האישור יישלח מייל עם פרטי ההזמנה, והקמפיין ימתין לתשלום.
+        שלום {name}. מעבירים את הסכום בביט ללייבל, סוגרים עיסקה, ואחרי שהכסף מאושר הקמפיין עולה.
       </p>
       <dl className="mt-6 divide-y divide-border rounded-xl border border-border bg-surface px-4 text-sm">
         <div className="flex justify-between gap-3 py-3">
@@ -129,13 +150,38 @@ function PayForm({ email, name }: { email: string; name: string }) {
           </dd>
         </div>
         <div className="flex justify-between gap-3 py-3 font-medium">
-          <dt>לתשלום ללייבל</dt>
-          <dd>
-            {symbol}
-            {totalCents / 100}
-          </dd>
+          <dt>להעברה בביט</dt>
+          <dd>{amount}</dd>
         </div>
       </dl>
+
+      <section className="mt-6 rounded-xl border border-border bg-surface p-5">
+        <div className="flex items-center gap-2">
+          <Smartphone className="size-4 text-muted" />
+          <h2 className="font-medium">איך משלמים</h2>
+        </div>
+        <ol className="mt-3 space-y-2 text-sm leading-relaxed text-muted">
+          <li>1. פתחו ביט והעבירו {amount}.</li>
+          <li>2. בתיאור כתבו את שם השיר.</li>
+          <li>3. חזרו לכאן וסגרו עיסקה. הסטודיו מאשר, והמודעה עולה.</li>
+        </ol>
+        <div className="mt-4 rounded-lg bg-elevated px-4 py-3 text-sm">
+          {payout || "פרטי הביט יופיעו אחרי שהסטודיו ימלא מספר ביט במסך הסטודיו."}
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {payout ? (
+            <Button type="button" variant="outline" onClick={() => void copyText(payout, "bit")}>
+              <Copy className="size-4" />
+              {copied === "bit" ? "הועתק" : "העתק פרטי ביט"}
+            </Button>
+          ) : null}
+          <Button type="button" variant="outline" onClick={() => void copyText(String(totalCents / 100), "sum")}>
+            <Copy className="size-4" />
+            {copied === "sum" ? "הועתק" : `העתק סכום ${amount}`}
+          </Button>
+        </div>
+      </section>
+
       <div className="mt-6">
         <Label>מייל לאישור העיסקה</Label>
         <Input
@@ -145,7 +191,6 @@ function PayForm({ email, name }: { email: string; name: string }) {
           onChange={(e) => patch({ receiptEmail: e.target.value })}
           placeholder="name@email.com"
         />
-        <p className="mt-2 text-xs text-subtle">נשלח מיד אחרי הסגירה, עם סיכום ההזמנה.</p>
       </div>
       {error ? (
         <p className="mt-4 rounded-md border border-danger/30 bg-elevated px-3 py-2 text-sm text-danger">
@@ -158,7 +203,7 @@ function PayForm({ email, name }: { email: string; name: string }) {
           חזרה
         </Button>
         <Button size="lg" onClick={() => void finish()} disabled={publishing}>
-          {publishing ? <Loader2 className="size-4 animate-spin" /> : "סגור עיסקה ושלח אישור"}
+          {publishing ? <Loader2 className="size-4 animate-spin" /> : "סגור עיסקה בביט"}
           {!publishing ? <ArrowLeft className="size-4" /> : null}
         </Button>
       </div>

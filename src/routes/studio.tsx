@@ -150,6 +150,28 @@ function Studio() {
         ) : null}
 
         <section className="rounded-xl border border-border bg-surface p-5">
+          <h2 className="font-medium">ביט לקבלת תשלום</h2>
+          <p className="mt-2 text-sm text-muted">
+            זה מה שהאמן רואה בקופה. ממלאים מספר ביט ושם. אחרי שהכסף מגיע, מאשרים למטה ומפעילים קמפיין.
+          </p>
+          <Label className="mt-4">מספר ביט או שם לקבלה</Label>
+          <Input
+            value={payout}
+            onChange={(e) => setPayout(e.target.value)}
+            placeholder="ביט ל 05xxxxxxxx בשם Ignite Records"
+          />
+          <Button
+            className="mt-3"
+            variant="outline"
+            type="button"
+            disabled={!session?.isOperator || payout.trim().length < 2}
+            onClick={() => void savePayoutNote({ data: { payoutNote: payout } }).then(reload)}
+          >
+            שמור פרטי ביט
+          </Button>
+        </section>
+
+        <section className="rounded-xl border border-border bg-surface p-5">
           <h2 className="font-medium">חיבור מטא קבוע</h2>
           {session?.operatorConnected ? (
             <p className="mt-2 text-sm text-muted">
@@ -188,22 +210,6 @@ function Studio() {
           ) : null}
         </section>
 
-        <section className="rounded-xl border border-border bg-surface p-5">
-          <h2 className="font-medium">איך אמנים משלמים</h2>
-          <p className="mt-2 text-sm text-muted">ביט / העברה. הסכום מגיע אליכם, והקמפיין רץ מחשבון המטא של הלייבל.</p>
-          <Label className="mt-4">פרטי תשלום שיוצגו לאמן</Label>
-          <Input value={payout} onChange={(e) => setPayout(e.target.value)} placeholder="ביט ל 05... / חשבון בנק..." />
-          <Button
-            className="mt-3"
-            variant="outline"
-            type="button"
-            disabled={!session?.isOperator || payout.trim().length < 2}
-            onClick={() => void savePayoutNote({ data: { payoutNote: payout } }).then(reload)}
-          >
-            שמור פרטי תשלום
-          </Button>
-        </section>
-
         {error ? <p className="text-sm text-danger">{error}</p> : null}
 
         <section>
@@ -226,7 +232,7 @@ function Studio() {
                     <div className="flex gap-2">
                       {(c.status === "awaiting_confirmation" || c.status === "awaiting_payment") && (
                         <Button size="sm" onClick={() => void confirmPayment({ data: { id: c.id } }).then(reload)}>
-                          סמן שולם והפעל
+                          ביט הגיע, הפעל קמפיין
                         </Button>
                       )}
                       {c.status === "failed" && (

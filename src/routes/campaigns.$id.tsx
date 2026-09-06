@@ -57,23 +57,27 @@ function CampaignDetail() {
 
   useEffect(() => {
     let cancelled = false;
-    void Promise.all([
-      getCampaign({ data: { id: campaignId } }),
-      getBoostSession(),
-      getCampaignEmails({ data: { id: campaignId } }),
-    ])
-      .then(([c, s, mail]) => {
+    async function load() {
+      try {
+        const [c, s, mail] = await Promise.all([
+          getCampaign({ data: { id: campaignId } }),
+          getBoostSession(),
+          getCampaignEmails({ data: { id: campaignId } }),
+        ]);
         if (cancelled) return;
         setRow(c);
         setPayout(s.payoutNote || "");
         setPreview(s.previewPayments);
         setEmails(mail);
-      })
-      .catch((e) => {
+      } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "שגיאה");
-      });
+      }
+    }
+    void load();
+    const timer = window.setInterval(() => void load(), 15000);
     return () => {
       cancelled = true;
+      window.clearInterval(timer);
     };
   }, [campaignId]);
 
@@ -89,7 +93,6 @@ function CampaignDetail() {
   }
 
   const insights = row?.insights;
-  const live = row?.status === "live";
   const orderMail = emails.find((e) => e.kind === "order") || emails[0];
 
   return (
@@ -108,13 +111,17 @@ function CampaignDetail() {
                 <div className="p-5">
                   <p className="inline-flex items-center gap-2 text-sm text-fg">
                     <Check className="size-4" />
-                    העיסקה נסגרה
+                    {row.status === "awaiting_payment" || row.status === "awaiting_confirmation"
+                      ? "ההזמנה נקלטה"
+                      : "העיסקה נסגרה"}
                   </p>
                   <h1 className="mt-2 text-3xl font-semibold tracking-tight">{displayText(row.title)}</h1>
                   <p className="mt-2 text-sm leading-relaxed text-muted">
-                    אישור נשלח
-                    {orderMail ? ` אל ${orderMail.toEmail}` : " למייל שלך"}. אפשר לראות את המכתב למטה,
-                    ולהמשיך לתשלום ללייבל.
+                    {row.status === "awaiting_payment"
+                      ? `העבירו ${money(row.totalCents, row.currency)} בביט, ואז לחצו שילמתי בביט.`
+                      : row.status === "awaiting_confirmation"
+                        ? "סימנת ששולם. מחכים שהסטודיו יאשר ויפעיל את המודעה."
+                        : `התשלום אושר${orderMail ? `, אישור נשלח אל ${orderMail.toEmail}` : ""}. צפיות וקליקים מתעדכנים כאן.`}
                   </p>
                 </div>
               </section>
@@ -154,9 +161,9 @@ function CampaignDetail() {
 
             {(row.status === "awaiting_payment" || row.status === "awaiting_confirmation") && (
               <section className="mt-8 rounded-xl border border-border bg-surface p-5">
-                <h2 className="font-medium">תשלום ללייבל</h2>
+                <h2 className="font-medium">תשלום בביט</h2>
                 <p className="mt-2 text-sm leading-relaxed text-muted">
-                  התשלום עובר ל Ignite Records. אחרי האישור הקמפיין עולה לאוויר.
+                  העבירו {money(row.totalCents, row.currency)} בביט ל Ignite Records. אחרי שהסטודיו מאשר, הקמפיין עולה לאוויר.
                 </p>
                 {payout ? (
                   <p className="mt-3 rounded-md bg-elevated px-3 py-2 text-sm">{payout}</p>
@@ -180,7 +187,7 @@ function CampaignDetail() {
                           .finally(() => setBusy(false));
                       }}
                     >
-                      שילמתי, אשר קבלה
+                      שילמתי בביט
                     </Button>
                   ) : null}
                   {preview ? (
@@ -209,19 +216,19 @@ function CampaignDetail() {
             ) : null}
 
             <section className="mt-8 rounded-xl border border-border bg-surface p-5">
-              {live && insights ? (
-                <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  <Stat label="חשיפות" value={insights.impressions} />
+              <h2 className="font-medium">שקיפות הקמפיין</h2>
+              <p className="mt-1 text-sm text-muted">נתונים חיים מחשבון המטא. מתעדכן כל כמה שניות.</p>
+              {insights ? (
+                <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <Stat label="צפיות" value={insights.impressions} />
                   <Stat label="קליקים" value={insights.clicks} />
-                  <Stat label="הוצאה" value={insights.spend} />
                   <Stat label="הגעה" value={insights.reach} />
                   <Stat label="CTR" value={insights.ctr ? `${insights.ctr.toFixed(2)}%` : "0%"} />
-                  <Stat label="סטטוס מטא" value={insights.status || "לא צוין"} />
                 </dl>
               ) : (
-                <p className="rounded-md bg-elevated px-3 py-3 text-sm text-muted">
-                  {row.status === "paid"
-                    ? "התשלום אושר. המודעה עולה עכשיו לאוויר. הנתונים יופיעו מיד אחרי."
+                <p className="mt-4 rounded-md bg-elevated px-3 py-3 text-sm text-muted">
+                  {row.status === "live" || row.status === "paid"
+                    ? "המודעה באוויר. הצפיות והקליקים יופיעו ברגע שמטא תדווח."
                     : "הנתונים יופיעו כאן אחרי שהקמפיין ייצא לאוויר."}
                 </p>
               )}

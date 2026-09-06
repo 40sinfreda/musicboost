@@ -394,12 +394,64 @@ const SubmitInput = z.object({
   currency: z.enum(["ILS", "USD", "EUR"]),
   receiptEmail: z.string().email(),
   audienceLabel: z.string().min(1),
+  method: z.enum(["card", "bit"]).default("card"),
+  card: z
+    .object({
+      number: z.string().min(13).max(23),
+      expiry: z.string().min(4).max(7),
+      cvc: z.string().min(3).max(4),
+      holder: z.string().min(2).max(80),
+    })
+    .optional(),
 });
+
+function luhnOk(raw: string) {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length < 13 || digits.length > 19) return false;
+  let sum = 0;
+  let alt = false;
+  for (let i = digits.length - 1; i >= 0; i--) {
+    let n = Number(digits[i]);
+    if (alt) {
+      n *= 2;
+      if (n > 9) n -= 9;
+    }
+    sum += n;
+    alt = !alt;
+  }
+  return sum % 10 === 0;
+}
+
+function cardLast4(raw: string) {
+  return raw.replace(/\D/g, "").slice(-4);
+}
+
+function expiryOk(raw: string) {
+  const m = raw.replace(/\s/g, "").match(/^(\d{2})\/?(\d{2})$/);
+  if (!m) return false;
+  const month = Number(m[1]);
+  const year = 2000 + Number(m[2]);
+  if (month < 1 || month > 12) return false;
+  const now = new Date();
+  const exp = new Date(year, month, 1);
+  return exp > now;
+}
 
 export const submitCampaign = createServerFn({ method: "POST" })
   .validator(SubmitInput)
   .middleware([authMiddleware])
   .handler(async ({ context, data }) => {
+    const payWithBit = data.method === "bit";
+    if (payWithBit && data.currency !== "ILS") {
+      throw new Error("ביט זמין רק בתשלום בשקלים");
+    }
+    if (!payWithBit) {
+      const card = data.card;
+      if (!card || !luhnOk(card.number) || !expiryOk(card.expiry) || !/^\d{3,4}$/.test(card.cvc)) {
+        throw new Error("פרטי הכרטיס לא תקינים");
+      }
+    }
+    const last4 = payWithBit ? "" : cardLast4(data.card!.number);
     const op = await getOperator();
     const bps = op?.commission_bps || COMMISSION_BPS;
     const dailyBudgetCents = Math.round(data.dailyBudgetMajor * 100);
@@ -417,20 +469,22 @@ export const submitCampaign = createServerFn({ method: "POST" })
         thumbnail: data.thumbnail || null,
       },
     });
+    const status = payWithBit ? "awaiting_payment" : "paid";
+    const paidAt = payWithBit ? null : new Date();
     const sql = await getSql();
     const rows = await sql<{ id: number }>`
       insert into campaigns (
         user_id, title, platform, content_type, media_url, thumbnail, spec_json,
-        daily_budget_cents, days, ad_cents, fee_cents, total_cents, currency, status
+        daily_budget_cents, days, ad_cents, fee_cents, total_cents, currency, status, paid_at
       ) values (
         ${context.userId}, ${data.title}, ${data.platform}, ${data.contentType},
         ${data.mediaUrl}, ${data.thumbnail || null}, ${specJson},
         ${dailyBudgetCents}, ${data.days}, ${adCents}, ${feeCents}, ${totalCents},
-        ${data.currency}, ${"awaiting_payment"}
+        ${data.currency}, ${status}, ${paidAt}
       ) returning id`;
     const campaignId = rows[0]!.id;
-    await sql`insert into payments (user_id, campaign_id, ad_cents, fee_cents, total_cents, currency, status, method)
-      values (${context.userId}, ${campaignId}, ${adCents}, ${feeCents}, ${totalCents}, ${data.currency}, ${"pending"}, ${"bit"})`;
+    await sql`insert into payments (user_id, campaign_id, ad_cents, fee_cents, total_cents, currency, status, method, confirmed_at)
+      values (${context.userId}, ${campaignId}, ${adCents}, ${feeCents}, ${totalCents}, ${data.currency}, ${payWithBit ? "pending" : "paid"}, ${payWithBit ? "bit" : "card ****" + last4}, ${paidAt})`;
     const profile = await userProfile(context.userId);
     const toEmail = data.receiptEmail.trim() || profile.email;
     const targeting = data.spec.facebook.targeting;
@@ -460,13 +514,16 @@ export const submitCampaign = createServerFn({ method: "POST" })
     } catch (err) {
       console.error("order email failed", err);
     }
-    return {
-      id: campaignId,
-      totalCents,
-      days: data.days,
-      currency: data.currency,
-      receiptEmail: toEmail,
-    };
+    if (payWithBit) {
+      const created = await sql<CampaignRow>`select * from campaigns where id = ${campaignId}`;
+      return publicCampaign(created[0]!);
+    }
+    try {
+      return await launchIfPaid(campaignId);
+    } catch {
+      const launched = await sql<CampaignRow>`select * from campaigns where id = ${campaignId}`;
+      return publicCampaign(launched[0]!);
+    }
   });
 
 export const listMyCampaigns = createServerFn({ method: "GET" })
