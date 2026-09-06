@@ -3,7 +3,8 @@ const BIT_KEY = "musicboost:bit";
 const USER_KEY = "musicboost:user";
 const GOOGLE_KEY = "musicboost:google";
 const GOOGLE_CLIENT_ID = "1014950956396-dk1t721nsh0mln4mkqk24a36liacjvf5.apps.googleusercontent.com";
-const PUBLIC_BIT = "ביט ל 0543462222 בשם Ignite Records";
+const PUBLIC_BIT = "ביט ל Ignite Records";
+const BIT_PHONE = "0543462222";
 const API = "https://graph.facebook.com/v26.0";
 const BUDGETS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 const DAYS = [3, 7, 14, 30];
@@ -190,6 +191,28 @@ function bitPayout() {
 function totalAmount() {
   return state.dailyBudget * state.days;
 }
+function bitPayUrl(amount) {
+  return "https://www.bitpay.co.il/app/bitTransfer?phone=" + BIT_PHONE + "&sum=" + amount;
+}
+function openBitPay() {
+  const amount = totalAmount();
+  const url = bitPayUrl(amount);
+  const qr = document.getElementById("bitQr");
+  if (qr) {
+    qr.src = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" + encodeURIComponent(url);
+    qr.classList.remove("hidden");
+  }
+  const btn = document.getElementById("payBitBtn");
+  if (btn) btn.textContent = "שלם בביט ₪" + amount;
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  if (isAndroid) {
+    window.location.href = "intent://bitTransfer?phone=" + BIT_PHONE + "&sum=" + amount +
+      "#Intent;scheme=https;package=com.bnhp.payments.paymentsapp;S.browser_fallback_url=" +
+      encodeURIComponent(url) + ";end";
+    return;
+  }
+  window.open(url, "_blank", "noopener");
+}
 function orderText() {
   const m = state.media || {};
   const names = GEO[state.continent].countries.filter(([c]) => state.countries.includes(c)).map((x) => x[1]).join(", ");
@@ -200,7 +223,6 @@ function orderText() {
     "קהל: " + names,
     "תקציב: ₪" + state.dailyBudget + " ליום, " + state.days + " ימים",
     "לתשלום בביט: ₪" + totalAmount(),
-    bitPayout(),
   ].filter(Boolean).join("\n");
 }
 
@@ -238,8 +260,8 @@ function setStep(n) {
   if (n === 4) fillAdCopy();
   if (n === 5) {
     renderSummary();
-    const t = document.getElementById("bitTarget");
-    if (t) t.textContent = bitPayout();
+    const btn = document.getElementById("payBitBtn");
+    if (btn) btn.textContent = "שלם בביט ₪" + totalAmount();
   }
 }
 
@@ -431,16 +453,13 @@ document.getElementById("publishBtn").onclick = async () => {
     /* ignore */
   }
   box.innerHTML =
-    '<div class="ok">ההזמנה נקלטה. העבירו ₪' + totalAmount() +
-    " בביט ללייבל, בתיאור כתבו את שם השיר. סיכום ההזמנה הועתק, שלחו אותו ללייבל אחרי ההעברה.</div>";
+    '<div class="ok">ההזמנה נקלטה. אחרי שהתשלום בביט מגיע, הסטודיו מפעיל את המודעה.</div>';
 };
 
-document.getElementById("copyBitBtn").onclick = async () => {
-  try { await navigator.clipboard.writeText(bitPayout()); } catch { /* ignore */ }
-};
-document.getElementById("copySumBtn").onclick = async () => {
+document.getElementById("payBitBtn").onclick = () => openBitPay();
+document.getElementById("copySumBtn") && (document.getElementById("copySumBtn").onclick = async () => {
   try { await navigator.clipboard.writeText(String(totalAmount())); } catch { /* ignore */ }
-};
+});
 
 document.getElementById("launchMetaBtn").onclick = async () => {
   const box = document.getElementById("pubMsg");

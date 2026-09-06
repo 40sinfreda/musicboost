@@ -65,7 +65,8 @@
     @keyframes splash-mark { from { opacity:0; transform:scale(.92); } to { opacity:1; transform:none; } }
     @keyframes splash-leave { 0%, 80% { opacity:1; } 100% { opacity:0; visibility:hidden; pointer-events:none; } }
     @keyframes meter { to { width:100%; } }
-    .btn.google { width:100%; background:#fff; color:#1f1f1f; display:flex; align-items:center; justify-content:center; gap:10px; }
+    .btn.bit { background:#12c8c8; color:#062428; width:100%; font-weight:600; }
+    .qr { display:block; width:180px; height:180px; margin:16px auto 0; border-radius:12px; background:#fff; padding:8px; }
     .or { text-align:center; color:var(--subtle); font-size:12px; margin:16px 0 4px; }
   </style>
 </head>
@@ -231,25 +232,22 @@
   <section class="card hidden" id="step5">
     <img class="hero" src="public/images/step-done.jpg" alt="" />
     <h1>תשלום בביט</h1>
-    <p class="lead">מעבירים את הסכום בביט ללייבל. אחרי שהכסף מגיע, הסטודיו מפעיל את המודעה.</p>
+    <p class="lead">לחצו לשלם בביט. האפליקציה נפתחת עם הסכום. אחרי התשלום חוזרים לכאן וסוגרים.</p>
     <dl id="summary"></dl>
     <div class="card" style="margin-top:16px;background:var(--elev)">
-      <p style="margin:0 0 8px;font-weight:600">לאן מעבירים</p>
-      <p id="bitTarget" class="muted" style="margin:0"></p>
-      <div class="row" style="margin-top:12px">
-        <button class="btn ghost" id="copyBitBtn" type="button">העתק פרטי ביט</button>
-        <button class="btn ghost" id="copySumBtn" type="button">העתק סכום</button>
-      </div>
+      <button class="btn bit" id="payBitBtn" type="button">שלם בביט</button>
+      <p class="muted" style="text-align:center;margin:12px 0 0">במחשב סורקים את הקוד מתוך ביט</p>
+      <img id="bitQr" class="qr hidden" alt="קוד לתשלום בביט" />
     </div>
     <div id="pubMsg"></div>
     <div class="row" style="margin-top:16px;justify-content:flex-end">
       <button class="btn ghost" data-back="4" type="button">חזרה</button>
-      <button class="btn" id="publishBtn" type="button">סגור עיסקה בביט</button>
+      <button class="btn" id="publishBtn" type="button">העברתי בביט</button>
       <button class="btn ghost hidden" id="launchMetaBtn" type="button">הפעל במטא אחרי ביט</button>
     </div>
   </section>
 </main>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="app.js?v=google6"></script>
+<script src="app.js?v=bit1"></script>
 </body>
 </html>
