@@ -599,7 +599,6 @@ document.getElementById("saveGoogleBtn").onclick = () => {
   if (v) localStorage.setItem(GOOGLE_KEY, v);
 };
 const googleField = document.getElementById("googleClient");
-const googleField = document.getElementById("googleClient");
 if (googleField) googleField.value = localStorage.getItem(GOOGLE_KEY) || GOOGLE_CLIENT_ID;
 if (!localStorage.getItem(GOOGLE_KEY)) localStorage.setItem(GOOGLE_KEY, GOOGLE_CLIENT_ID);
 
