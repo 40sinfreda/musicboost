@@ -163,11 +163,13 @@ function extractUrl(raw) {
 }
 
 function esc(value) {
-  return String(value || "")
-    .replace(/&/g, "&")
-    .replace(/</g, "<")
-    .replace(/>/g, ">")
-    .replace(/"/g, """);
+  return String(value || "").replace(/[&<>"']/g, (ch) => {
+    if (ch === "&") return "&" + "amp;";
+    if (ch === "<") return "&" + "lt;";
+    if (ch === ">") return "&" + "gt;";
+    if (ch === '"') return "&" + "quot;";
+    return "&" + "#39;";
+  });
 }
 
 function showErr(id, msg) {
