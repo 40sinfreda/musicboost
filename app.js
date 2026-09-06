@@ -214,10 +214,10 @@ function renderMeta() {
   if (!s) {
     box.classList.add("hidden");
     launch.classList.add("hidden");
-    studio.textContent = "סטודיו";
+    if (studio) studio.textContent = "סטודיו";
     return;
   }
-  studio.textContent = "סטודיו";
+  if (studio) studio.textContent = "סטודיו";
   box.classList.remove("hidden");
   launch.classList.remove("hidden");
   document.getElementById("who").textContent = "מחובר כ" + s.userName + ". הטוקן שמור בדפדפן הזה.";
@@ -315,13 +315,13 @@ document.getElementById("saveBitBtn").onclick = () => {
 document.getElementById("logoutBtn").onclick = () => { localStorage.removeItem(KEY); renderMeta(); };
 document.getElementById("accountSel").onchange = (e) => { const s = session(); if (s) saveSession({ ...s, adAccountId: e.target.value }); };
 document.getElementById("pageSel").onchange = (e) => { const s = session(); if (s) saveSession({ ...s, pageId: e.target.value }); };
-document.getElementById("studioLink").onclick = (e) => {
+document.getElementById("studioLink") && (document.getElementById("studioLink").onclick = (e) => {
   e.preventDefault();
   const card = document.getElementById("connectCard");
   card.classList.remove("hidden");
   card.scrollIntoView({ behavior: "smooth" });
   history.replaceState(null, "", "#studio");
-};
+});
 if (location.hash === "#studio") {
   document.getElementById("connectCard").classList.remove("hidden");
 }
