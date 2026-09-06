@@ -488,8 +488,8 @@ function loadUser() {
 function hideSplash() {
   const splash = document.getElementById("splash");
   if (splash) {
-    splash.style.opacity = "0";
-    splash.style.visibility = "hidden";
+    splash.classList.add("done");
+    splash.style.display = "none";
     splash.style.pointerEvents = "none";
   }
 }
@@ -540,13 +540,24 @@ function waitGsi() {
   });
 }
 async function startGoogle() {
-  const err = document.getElementById("loginErr");
+  const btn = document.getElementById("googleBtn");
+  const err = document.getElementById("googleErr") || document.getElementById("loginErr");
+  const original = btn ? btn.innerHTML : "";
+  function fail(msg) {
+    if (btn) btn.innerHTML = original;
+    err.className = "err";
+    err.textContent = msg;
+    err.classList.remove("hidden");
+  }
   try {
+    hideSplash();
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "פותח את גוגל...";
+    }
     const clientId = googleClientId();
     if (!clientId) {
-      err.className = "err";
-      err.textContent = "חסר מזהה גוגל. פותחים סטודיו ושומרים Client ID מ Google Cloud, עם origin https://40sinfreda.github.io";
-      err.classList.remove("hidden");
+      fail("חסר מזהה גוגל. פותחים סטודיו, מדביקים Client ID מ Google Cloud עם origin https://40sinfreda.github.io ושומרים.");
       return;
     }
     await waitGsi();
@@ -561,20 +572,25 @@ async function startGoogle() {
           }).then((r) => r.json());
           finishGoogle(u);
         } catch (e) {
-          err.className = "err";
-          err.textContent = e.message || "כניסת גוגל נכשלה";
-          err.classList.remove("hidden");
+          fail(e.message || "כניסת גוגל נכשלה");
         }
       },
     });
     client.requestAccessToken();
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = original;
+    }
   } catch (e) {
-    err.className = "err";
-    err.textContent = e.message || "כניסת גוגל נכשלה";
-    err.classList.remove("hidden");
+    fail(e.message || "כניסת גוגל נכשלה");
   }
 }
-document.getElementById("googleBtn").onclick = () => void startGoogle();
+document.addEventListener("click", (e) => {
+  if (e.target.closest && e.target.closest("#googleBtn")) {
+    e.preventDefault();
+    void startGoogle();
+  }
+});
 document.getElementById("saveGoogleBtn").onclick = () => {
   const v = document.getElementById("googleClient").value.trim();
   if (v) localStorage.setItem(GOOGLE_KEY, v);
