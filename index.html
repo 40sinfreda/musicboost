@@ -53,12 +53,17 @@
     .hidden { display:none !important; }
     #splash {
       position:fixed; inset:0; z-index:50; display:grid; place-items:center; background:var(--bg);
+      animation: splash-leave 2.1s cubic-bezier(.22,1,.36,1) forwards;
     }
     #splash .mark { text-align:center; animation: splash-mark .5s cubic-bezier(.22,1,.36,1); }
     #splash .blob { width:64px; height:64px; margin:0 auto; border-radius:18px; background:var(--accent); color:var(--accent-fg); display:grid; place-items:center; font-size:28px; font-weight:700; box-shadow:0 12px 40px rgba(255,77,61,.35); }
+    .meter { width:168px; height:4px; margin:22px auto 0; background:var(--elev); border-radius:999px; overflow:hidden; }
+    .meter i { display:block; height:100%; width:0; background:var(--accent); animation: meter 1.8s cubic-bezier(.22,1,.36,1) forwards; }
     #loginGate { position:fixed; inset:0; z-index:40; display:grid; place-items:center; padding:20px; background:linear-gradient(180deg, rgba(255,77,61,.18), var(--bg) 55%); }
     #loginGate .box { width:100%; max-width:380px; background:var(--surface); border:1px solid var(--border); border-radius:24px; padding:24px; }
     @keyframes splash-mark { from { opacity:0; transform:scale(.92); } to { opacity:1; transform:none; } }
+    @keyframes splash-leave { 0%, 80% { opacity:1; } 100% { opacity:0; visibility:hidden; pointer-events:none; } }
+    @keyframes meter { to { width:100%; } }
     @media (max-width:640px) { .steps { grid-template-columns:1fr 1fr; } .meta { grid-template-columns:1fr; } }
   </style>
 </head>
@@ -68,9 +73,11 @@
     <div class="blob">MB</div>
     <p style="margin:18px 0 4px;font-size:1.4rem;font-weight:600">MusicBoost</p>
     <p class="muted" style="margin:0">Ignite Records</p>
+    <div class="meter" aria-hidden="true"><i></i></div>
+    <p class="muted" style="margin:10px 0 0">טוען</p>
   </div>
 </div>
-<div id="loginGate" class="hidden">
+<div id="loginGate">
   <div class="box">
     <div class="logo" style="margin-bottom:16px">MB</div>
     <h1 style="margin:0 0 8px">כניסה</h1>

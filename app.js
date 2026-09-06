@@ -473,12 +473,24 @@ document.getElementById("launchMetaBtn").onclick = async () => {
   } catch (e) { box.innerHTML = '<div class="err">' + e.message + "</div>"; }
 };
 
-renderMeta();
-renderContinents();
-renderBudget();
+try {
+  renderMeta();
+  renderContinents();
+  renderBudget();
+} catch (e) {
+  console.warn(e);
+}
 
 function loadUser() {
   try { return JSON.parse(localStorage.getItem(USER_KEY) || "null"); } catch { return null; }
+}
+function hideSplash() {
+  const splash = document.getElementById("splash");
+  if (splash) {
+    splash.style.opacity = "0";
+    splash.style.visibility = "hidden";
+    splash.style.pointerEvents = "none";
+  }
 }
 function paintUser() {
   const user = loadUser();
@@ -486,13 +498,13 @@ function paintUser() {
   const out = document.getElementById("logoutBtnTop");
   const gate = document.getElementById("loginGate");
   if (user && user.email) {
-    chip.textContent = user.name || user.email;
-    out.classList.remove("hidden");
-    gate.classList.add("hidden");
+    if (chip) chip.textContent = user.name || user.email;
+    out && out.classList.remove("hidden");
+    gate && gate.classList.add("hidden");
   } else {
-    chip.textContent = "";
-    out.classList.add("hidden");
-    gate.classList.remove("hidden");
+    if (chip) chip.textContent = "";
+    out && out.classList.add("hidden");
+    gate && gate.classList.remove("hidden");
   }
 }
 document.getElementById("loginBtn").onclick = () => {
@@ -506,8 +518,7 @@ document.getElementById("loginBtn").onclick = () => {
     return;
   }
   localStorage.setItem(USER_KEY, JSON.stringify({ name, email }));
-  const receipt = document.querySelector('input[type="email"]');
-  if (receipt && !receipt.id) {}
+  hideSplash();
   paintUser();
 };
 document.getElementById("logoutBtnTop").onclick = () => {
@@ -515,6 +526,6 @@ document.getElementById("logoutBtnTop").onclick = () => {
   paintUser();
 };
 window.setTimeout(() => {
-  document.getElementById("splash").classList.add("hidden");
+  hideSplash();
   paintUser();
-}, 1700);
+}, 2000);
