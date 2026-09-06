@@ -1,6 +1,7 @@
 const KEY = "musicboost:meta";
 const BIT_KEY = "musicboost:bit";
 const USER_KEY = "musicboost:user";
+const GOOGLE_KEY = "musicboost:google";
 const PUBLIC_BIT = "ביט ל 0543462222 בשם Ignite Records";
 const API = "https://graph.facebook.com/v26.0";
 const BUDGETS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
@@ -507,6 +508,80 @@ function paintUser() {
     gate && gate.classList.remove("hidden");
   }
 }
+
+function googleClientId() {
+  return (localStorage.getItem(GOOGLE_KEY) || document.getElementById("googleClient")?.value || "").trim();
+}
+function finishGoogle(profile) {
+  if (!profile || !profile.email) throw new Error("גוגל לא החזיר אימייל");
+  localStorage.setItem(USER_KEY, JSON.stringify({
+    name: profile.name || profile.email,
+    email: profile.email,
+    picture: profile.picture || "",
+    google: true,
+  }));
+  hideSplash();
+  paintUser();
+}
+function waitGsi() {
+  return new Promise((resolve, reject) => {
+    if (window.google && google.accounts && google.accounts.oauth2) return resolve();
+    let n = 0;
+    const t = setInterval(() => {
+      n += 1;
+      if (window.google && google.accounts && google.accounts.oauth2) {
+        clearInterval(t);
+        resolve();
+      } else if (n > 50) {
+        clearInterval(t);
+        reject(new Error("גוגל לא נטען. רעננו את העמוד."));
+      }
+    }, 100);
+  });
+}
+async function startGoogle() {
+  const err = document.getElementById("loginErr");
+  try {
+    const clientId = googleClientId();
+    if (!clientId) {
+      err.className = "err";
+      err.textContent = "חסר מזהה גוגל. פותחים סטודיו ושומרים Client ID מ Google Cloud, עם origin https://40sinfreda.github.io";
+      err.classList.remove("hidden");
+      return;
+    }
+    await waitGsi();
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: "openid email profile",
+      callback: async (resp) => {
+        try {
+          if (resp.error) throw new Error("כניסת גוגל נכשלה");
+          const u = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+            headers: { Authorization: "Bearer " + resp.access_token },
+          }).then((r) => r.json());
+          finishGoogle(u);
+        } catch (e) {
+          err.className = "err";
+          err.textContent = e.message || "כניסת גוגל נכשלה";
+          err.classList.remove("hidden");
+        }
+      },
+    });
+    client.requestAccessToken();
+  } catch (e) {
+    err.className = "err";
+    err.textContent = e.message || "כניסת גוגל נכשלה";
+    err.classList.remove("hidden");
+  }
+}
+document.getElementById("googleBtn").onclick = () => void startGoogle();
+document.getElementById("saveGoogleBtn").onclick = () => {
+  const v = document.getElementById("googleClient").value.trim();
+  if (v) localStorage.setItem(GOOGLE_KEY, v);
+};
+const googleField = document.getElementById("googleClient");
+if (googleField) googleField.value = localStorage.getItem(GOOGLE_KEY) || "";
+
 document.getElementById("loginBtn").onclick = () => {
   const name = document.getElementById("loginName").value.trim();
   const email = document.getElementById("loginEmail").value.trim();
