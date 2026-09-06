@@ -1,6 +1,6 @@
 const KEY = "musicboost:meta";
 const BIT_KEY = "musicboost:bit";
-const PUBLIC_BIT = "ביט ל Ignite Records";
+const PUBLIC_BIT = "ביט ל 0543462222 בשם Ignite Records";
 const API = "https://graph.facebook.com/v26.0";
 const BUDGETS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 const DAYS = [3, 7, 14, 30];

@@ -158,7 +158,7 @@ function Studio() {
           <Input
             value={payout}
             onChange={(e) => setPayout(e.target.value)}
-            placeholder="ביט ל 05xxxxxxxx בשם Ignite Records"
+            placeholder="ביט ל 0543462222 בשם Ignite Records"
           />
           <Button
             className="mt-3"

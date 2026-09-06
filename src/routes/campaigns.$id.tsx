@@ -163,12 +163,12 @@ function CampaignDetail() {
               <section className="mt-8 rounded-xl border border-border bg-surface p-5">
                 <h2 className="font-medium">תשלום בביט</h2>
                 <p className="mt-2 text-sm leading-relaxed text-muted">
-                  העבירו {money(row.totalCents, row.currency)} בביט ל Ignite Records. אחרי שהסטודיו מאשר, הקמפיין עולה לאוויר.
+                  העבירו {money(row.totalCents, row.currency)} בביט ל 0543462222 בשם Ignite Records. אחרי שהסטודיו מאשר, הקמפיין עולה לאוויר.
                 </p>
                 {payout ? (
                   <p className="mt-3 rounded-md bg-elevated px-3 py-2 text-sm">{payout}</p>
                 ) : (
-                  <p className="mt-3 text-sm text-muted">פרטי ביט יופיעו אחרי שהסטודיו ימלא אותם.</p>
+                  <p className="mt-3 rounded-md bg-elevated px-3 py-2 text-sm">ביט ל 0543462222 בשם Ignite Records</p>
                 )}
                 {row.status === "awaiting_confirmation" ? (
                   <p className="mt-4 text-sm text-warn">

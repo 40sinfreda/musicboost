@@ -38,7 +38,7 @@ function PayForm({ email, name }: { email: string; name: string }) {
 
   useEffect(() => {
     void getBoostSession()
-      .then((s) => setPayout(s.payoutNote || ""))
+      .then((s) => setPayout(s.payoutNote || "ביט ל 0543462222 בשם Ignite Records"))
       .catch(() => undefined);
   }, []);
 
@@ -166,7 +166,7 @@ function PayForm({ email, name }: { email: string; name: string }) {
           <li>3. חזרו לכאן וסגרו עיסקה. הסטודיו מאשר, והמודעה עולה.</li>
         </ol>
         <div className="mt-4 rounded-lg bg-elevated px-4 py-3 text-sm">
-          {payout || "פרטי הביט יופיעו אחרי שהסטודיו ימלא מספר ביט במסך הסטודיו."}
+          {payout}
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
           {payout ? (
