@@ -177,14 +177,20 @@ function orderText() {
 
 function renderMeta() {
   const s = session();
-  const btn = document.getElementById("metaBtn");
   const box = document.getElementById("connectedBox");
   const bitInput = document.getElementById("bitNote");
+  const studio = document.getElementById("studioLink");
+  const launch = document.getElementById("launchMetaBtn");
   if (bitInput && !bitInput.value) bitInput.value = bitPayout();
-  if (!s) { btn.textContent = "התחבר למטא"; box.classList.add("hidden"); document.getElementById("launchMetaBtn").classList.add("hidden"); return; }
-  btn.textContent = "מטא " + s.userName;
+  if (!s) {
+    box.classList.add("hidden");
+    launch.classList.add("hidden");
+    studio.textContent = "סטודיו";
+    return;
+  }
+  studio.textContent = "סטודיו";
   box.classList.remove("hidden");
-  document.getElementById("launchMetaBtn").classList.remove("hidden");
+  launch.classList.remove("hidden");
   document.getElementById("who").textContent = "מחובר כ" + s.userName + ". הטוקן שמור בדפדפן הזה.";
   document.getElementById("accountSel").innerHTML = (s.accounts || []).map((x) => '<option value="' + x.id + '"' + (x.id === s.adAccountId ? " selected" : "") + ">" + x.name + (x.currency ? " " + x.currency : "") + "</option>").join("");
   const p = document.getElementById("pageSel");
@@ -280,11 +286,16 @@ document.getElementById("saveBitBtn").onclick = () => {
 document.getElementById("logoutBtn").onclick = () => { localStorage.removeItem(KEY); renderMeta(); };
 document.getElementById("accountSel").onchange = (e) => { const s = session(); if (s) saveSession({ ...s, adAccountId: e.target.value }); };
 document.getElementById("pageSel").onchange = (e) => { const s = session(); if (s) saveSession({ ...s, pageId: e.target.value }); };
-document.getElementById("metaBtn").onclick = () => {
+document.getElementById("studioLink").onclick = (e) => {
+  e.preventDefault();
   const card = document.getElementById("connectCard");
   card.classList.remove("hidden");
   card.scrollIntoView({ behavior: "smooth" });
+  history.replaceState(null, "", "#studio");
 };
+if (location.hash === "#studio") {
+  document.getElementById("connectCard").classList.remove("hidden");
+}
 
 document.getElementById("detectBtn").onclick = async () => {
   hide("detectErr");
