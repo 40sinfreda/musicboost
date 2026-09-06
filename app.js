@@ -192,26 +192,34 @@ function totalAmount() {
   return state.dailyBudget * state.days;
 }
 function bitPayUrl(amount) {
-  return "https://www.bitpay.co.il/app/bitTransfer?phone=" + BIT_PHONE + "&sum=" + amount;
+  return "https://www.bitpay.co.il/he";
 }
 function openBitPay() {
   const amount = totalAmount();
-  const url = bitPayUrl(amount);
+  try { navigator.clipboard.writeText(String(amount)); } catch { /* ignore */ }
   const qr = document.getElementById("bitQr");
   if (qr) {
-    qr.src = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" + encodeURIComponent(url);
+    qr.src = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" + encodeURIComponent("https://play.google.com/store/apps/details?id=com.bnhp.payments.paymentsapp");
     qr.classList.remove("hidden");
   }
   const btn = document.getElementById("payBitBtn");
   if (btn) btn.textContent = "שלם בביט ₪" + amount;
-  const isAndroid = /Android/i.test(navigator.userAgent);
-  if (isAndroid) {
-    window.location.href = "intent://bitTransfer?phone=" + BIT_PHONE + "&sum=" + amount +
-      "#Intent;scheme=https;package=com.bnhp.payments.paymentsapp;S.browser_fallback_url=" +
-      encodeURIComponent(url) + ";end";
+  const hint = document.getElementById("bitHint");
+  if (hint) {
+    hint.textContent = "הסכום הועתק. פתחו ביט, העבירו ל Ignite Records, ואז לחצו העברתי בביט.";
+    hint.classList.remove("hidden");
+  }
+  const ua = navigator.userAgent || "";
+  const play = "https://play.google.com/store/apps/details?id=com.bnhp.payments.paymentsapp";
+  const ios = "https://apps.apple.com/il/app/id1182007739";
+  if (/Android/i.test(ua)) {
+    window.location.href = "intent://#Intent;package=com.bnhp.payments.paymentsapp;S.browser_fallback_url=" + encodeURIComponent(play) + ";end";
     return;
   }
-  window.open(url, "_blank", "noopener");
+  if (/iPhone|iPad|iPod/i.test(ua)) {
+    window.location.href = ios;
+    return;
+  }
 }
 function orderText() {
   const m = state.media || {};
