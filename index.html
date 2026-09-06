@@ -4,36 +4,40 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>MusicBoost Ignite Records</title>
-  <meta name="theme-color" content="#0a0a0b" />
+  <meta name="theme-color" content="#14080c" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
-    :root { --bg:#0a0a0b; --surface:#121214; --elev:#1a1a1e; --fg:#f4f4f5; --muted:#a1a1aa; --subtle:#71717a; --border:#27272a; --accent:#e4e4e7; --accent-fg:#0a0a0b; --danger:#f87171; --warn:#e8d5a3; }
+    :root {
+      --bg:#14080c; --surface:#221016; --elev:#321820; --fg:#fff4ee; --muted:#d7b0a6;
+      --subtle:#a07d76; --border:#4a2a32; --accent:#ff4d3d; --accent-fg:#2a0808;
+      --danger:#ff7a8a; --warn:#ffc56e;
+    }
     * { box-sizing: border-box; }
     html, body { margin:0; background:var(--bg); color:var(--fg); font-family:Heebo,sans-serif; min-height:100%; }
     button:not(:disabled) { cursor:pointer; }
     a { color:inherit; }
-    header { border-bottom:1px solid var(--border); }
+    header { border-bottom:1px solid var(--border); background:var(--bg); }
     .wrap { max-width:760px; margin:0 auto; padding:16px; }
     .brand { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-    .logo { width:40px; height:40px; border-radius:8px; background:var(--accent); color:var(--accent-fg); display:grid; place-items:center; font-weight:700; }
+    .logo { width:40px; height:40px; border-radius:12px; background:var(--accent); color:var(--accent-fg); display:grid; place-items:center; font-weight:700; }
     h1 { font-size:1.75rem; margin:1.5rem 0 .5rem; }
     p.lead { color:var(--muted); line-height:1.6; }
-    .card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:20px; margin-top:20px; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:20px; margin-top:20px; }
     label { display:block; font-size:.85rem; margin:14px 0 6px; }
-    input, textarea, select { width:100%; height:44px; border-radius:8px; border:1px solid var(--border); background:var(--elev); color:var(--fg); padding:0 12px; font:inherit; }
+    input, textarea, select { width:100%; height:44px; border-radius:12px; border:1px solid var(--border); background:var(--elev); color:var(--fg); padding:0 12px; font:inherit; }
     textarea { height:auto; padding:10px 12px; }
     .row { display:flex; gap:8px; flex-wrap:wrap; }
-    .btn { height:44px; border:0; border-radius:8px; padding:0 16px; font:inherit; font-weight:500; background:var(--accent); color:var(--accent-fg); }
+    .btn { height:44px; border:0; border-radius:12px; padding:0 16px; font:inherit; font-weight:500; background:var(--accent); color:var(--accent-fg); }
     .btn.ghost { background:transparent; border:1px solid var(--border); color:var(--fg); }
     .btn:disabled { opacity:.45; }
     .chip { height:36px; border-radius:999px; border:1px solid var(--border); background:transparent; color:var(--muted); padding:0 12px; font:inherit; }
-    .chip.on { border-color:var(--accent); background:var(--elev); color:var(--fg); }
-    .err { color:var(--danger); border:1px solid rgba(248,113,113,.3); background:var(--elev); padding:10px 12px; border-radius:8px; font-size:14px; }
-    .ok { border:1px solid rgba(74,222,128,.3); background:var(--elev); padding:12px; border-radius:8px; font-size:14px; }
+    .chip.on { border-color:var(--accent); background:var(--accent); color:var(--accent-fg); }
+    .err { color:var(--danger); border:1px solid rgba(255,122,138,.3); background:var(--elev); padding:10px 12px; border-radius:12px; font-size:14px; }
+    .ok { border:1px solid rgba(94,224,160,.3); background:var(--elev); padding:12px; border-radius:12px; font-size:14px; }
     .muted { color:var(--muted); font-size:13px; line-height:1.55; }
-    .hero { width:100%; height:180px; object-fit:cover; border-radius:12px; margin-bottom:16px; background:var(--elev); }
-    .media { overflow:hidden; border:1px solid var(--border); border-radius:12px; margin-top:16px; }
+    .hero { width:100%; height:180px; object-fit:cover; border-radius:16px; margin-bottom:16px; background:var(--elev); }
+    .media { overflow:hidden; border:1px solid var(--border); border-radius:16px; margin-top:16px; }
     .media img, .ph { width:100%; height:180px; object-fit:cover; background:var(--surface); display:block; }
     .meta { display:grid; grid-template-columns:1fr 1fr; gap:0; padding:12px 16px; }
     .meta div { padding:8px 0; }
@@ -43,14 +47,42 @@
     .song h3 { margin:0; font-size:1.2rem; }
     .steps { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin:20px 0; }
     .step { border:1px solid var(--border); border-radius:999px; padding:8px 6px; font-size:12px; color:var(--subtle); text-align:center; }
-    .step.on { color:var(--fg); background:var(--surface); }
+    .step.on { color:var(--accent-fg); background:var(--accent); border-color:var(--accent); }
     .kv { display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); font-size:14px; }
     .kv dt { color:var(--muted); } .kv dd { margin:0; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .hidden { display:none !important; }
+    #splash {
+      position:fixed; inset:0; z-index:50; display:grid; place-items:center; background:var(--bg);
+    }
+    #splash .mark { text-align:center; animation: splash-mark .5s cubic-bezier(.22,1,.36,1); }
+    #splash .blob { width:64px; height:64px; margin:0 auto; border-radius:18px; background:var(--accent); color:var(--accent-fg); display:grid; place-items:center; font-size:28px; font-weight:700; box-shadow:0 12px 40px rgba(255,77,61,.35); }
+    #loginGate { position:fixed; inset:0; z-index:40; display:grid; place-items:center; padding:20px; background:linear-gradient(180deg, rgba(255,77,61,.18), var(--bg) 55%); }
+    #loginGate .box { width:100%; max-width:380px; background:var(--surface); border:1px solid var(--border); border-radius:24px; padding:24px; }
+    @keyframes splash-mark { from { opacity:0; transform:scale(.92); } to { opacity:1; transform:none; } }
     @media (max-width:640px) { .steps { grid-template-columns:1fr 1fr; } .meta { grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
+<div id="splash">
+  <div class="mark">
+    <div class="blob">MB</div>
+    <p style="margin:18px 0 4px;font-size:1.4rem;font-weight:600">MusicBoost</p>
+    <p class="muted" style="margin:0">Ignite Records</p>
+  </div>
+</div>
+<div id="loginGate" class="hidden">
+  <div class="box">
+    <div class="logo" style="margin-bottom:16px">MB</div>
+    <h1 style="margin:0 0 8px">כניסה</h1>
+    <p class="lead" style="margin-top:0">שם ואימייל כדי לפתוח קמפיין ולקבל אישור.</p>
+    <label>שם</label>
+    <input id="loginName" placeholder="שם האמן" />
+    <label>אימייל</label>
+    <input id="loginEmail" type="email" placeholder="name@email.com" />
+    <div id="loginErr" class="hidden" style="margin-top:12px"></div>
+    <button class="btn" id="loginBtn" type="button" style="width:100%;margin-top:16px">כניסה</button>
+  </div>
+</div>
 <header>
   <div class="wrap brand">
     <div style="display:flex;gap:12px;align-items:center">
@@ -60,7 +92,11 @@
         <div class="muted">Ignite Records קידום יוטיוב וספוטיפיי</div>
       </div>
     </div>
-    <a class="muted" id="studioLink" href="#studio" style="font-size:12px;text-decoration:none">סטודיו</a>
+    <div class="row" style="align-items:center">
+      <span class="muted" id="userChip"></span>
+      <button class="btn ghost hidden" id="logoutBtnTop" type="button">יציאה</button>
+      <a class="muted" id="studioLink" href="#studio" style="font-size:12px;text-decoration:none">סטודיו</a>
+    </div>
   </div>
 </header>
 <main class="wrap">

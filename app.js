@@ -1,5 +1,6 @@
 const KEY = "musicboost:meta";
 const BIT_KEY = "musicboost:bit";
+const USER_KEY = "musicboost:user";
 const PUBLIC_BIT = "ביט ל 0543462222 בשם Ignite Records";
 const API = "https://graph.facebook.com/v26.0";
 const BUDGETS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
@@ -475,3 +476,45 @@ document.getElementById("launchMetaBtn").onclick = async () => {
 renderMeta();
 renderContinents();
 renderBudget();
+
+function loadUser() {
+  try { return JSON.parse(localStorage.getItem(USER_KEY) || "null"); } catch { return null; }
+}
+function paintUser() {
+  const user = loadUser();
+  const chip = document.getElementById("userChip");
+  const out = document.getElementById("logoutBtnTop");
+  const gate = document.getElementById("loginGate");
+  if (user && user.email) {
+    chip.textContent = user.name || user.email;
+    out.classList.remove("hidden");
+    gate.classList.add("hidden");
+  } else {
+    chip.textContent = "";
+    out.classList.add("hidden");
+    gate.classList.remove("hidden");
+  }
+}
+document.getElementById("loginBtn").onclick = () => {
+  const name = document.getElementById("loginName").value.trim();
+  const email = document.getElementById("loginEmail").value.trim();
+  const err = document.getElementById("loginErr");
+  if (name.length < 2 || !email.includes("@")) {
+    err.className = "err";
+    err.textContent = "מלאו שם ואימייל תקין";
+    err.classList.remove("hidden");
+    return;
+  }
+  localStorage.setItem(USER_KEY, JSON.stringify({ name, email }));
+  const receipt = document.querySelector('input[type="email"]');
+  if (receipt && !receipt.id) {}
+  paintUser();
+};
+document.getElementById("logoutBtnTop").onclick = () => {
+  localStorage.removeItem(USER_KEY);
+  paintUser();
+};
+window.setTimeout(() => {
+  document.getElementById("splash").classList.add("hidden");
+  paintUser();
+}, 1700);
