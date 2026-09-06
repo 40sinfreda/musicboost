@@ -1,4 +1,6 @@
 const KEY = "musicboost:meta";
+const BIT_KEY = "musicboost:bit";
+const PUBLIC_BIT = "ביט ל Ignite Records";
 const API = "https://graph.facebook.com/v26.0";
 const BUDGETS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 const DAYS = [3, 7, 14, 30];
@@ -149,13 +151,40 @@ function showErr(id, msg) {
 }
 function hide(id) { document.getElementById(id).classList.add("hidden"); }
 
+function bitPayout() {
+  try {
+    return localStorage.getItem(BIT_KEY) || PUBLIC_BIT;
+  } catch {
+    return PUBLIC_BIT;
+  }
+}
+function totalAmount() {
+  return state.dailyBudget * state.days;
+}
+function orderText() {
+  const m = state.media || {};
+  const names = GEO[state.continent].countries.filter(([c]) => state.countries.includes(c)).map((x) => x[1]).join(", ");
+  return [
+    "הזמנת MusicBoost",
+    (m.title || "שיר"),
+    m.author ? "אומן: " + m.author : "",
+    "קהל: " + names,
+    "תקציב: ₪" + state.dailyBudget + " ליום, " + state.days + " ימים",
+    "לתשלום בביט: ₪" + totalAmount(),
+    bitPayout(),
+  ].filter(Boolean).join("\n");
+}
+
 function renderMeta() {
   const s = session();
   const btn = document.getElementById("metaBtn");
   const box = document.getElementById("connectedBox");
-  if (!s) { btn.textContent = "התחבר למטא"; box.classList.add("hidden"); return; }
+  const bitInput = document.getElementById("bitNote");
+  if (bitInput && !bitInput.value) bitInput.value = bitPayout();
+  if (!s) { btn.textContent = "התחבר למטא"; box.classList.add("hidden"); document.getElementById("launchMetaBtn").classList.add("hidden"); return; }
   btn.textContent = "מטא " + s.userName;
   box.classList.remove("hidden");
+  document.getElementById("launchMetaBtn").classList.remove("hidden");
   document.getElementById("who").textContent = "מחובר כ" + s.userName + ". הטוקן שמור בדפדפן הזה.";
   document.getElementById("accountSel").innerHTML = (s.accounts || []).map((x) => '<option value="' + x.id + '"' + (x.id === s.adAccountId ? " selected" : "") + ">" + x.name + (x.currency ? " " + x.currency : "") + "</option>").join("");
   const p = document.getElementById("pageSel");
@@ -172,7 +201,11 @@ function setStep(n) {
   });
   if (n === 3) renderBudget();
   if (n === 4) fillAdCopy();
-  if (n === 5) renderSummary();
+  if (n === 5) {
+    renderSummary();
+    const t = document.getElementById("bitTarget");
+    if (t) t.textContent = bitPayout();
+  }
 }
 
 function renderContinents() {
@@ -215,8 +248,7 @@ function renderSummary() {
     ["מדינות", names],
     ["גילאים", document.getElementById("ageMin").value + " עד " + document.getElementById("ageMax").value],
     ["תקציב", s + state.dailyBudget + " ליום, " + state.days + " ימים"],
-    ["סה״כ", s + (state.dailyBudget * state.days)],
-    ["מטא", session() ? session().userName : "לא מחובר"],
+    ["סה״כ לביט", s + (state.dailyBudget * state.days)],
   ];
   document.getElementById("summary").innerHTML = rows.map(([k, v]) => '<div class="kv"><dt>' + k + "</dt><dd>" + (v || "") + "</dd></div>").join("");
 }
@@ -237,6 +269,13 @@ document.getElementById("connectBtn").onclick = async () => {
     saveSession({ token, userId: me.id, userName: me.name, accounts, pages: pg, adAccountId: ignite.id, pageId: ignitePage ? ignitePage.id : "" });
     document.getElementById("token").value = "";
   } catch (e) { showErr("connectErr", e.message); }
+};
+document.getElementById("saveBitBtn").onclick = () => {
+  const v = document.getElementById("bitNote").value.trim();
+  if (v.length < 4) return;
+  localStorage.setItem(BIT_KEY, v);
+  const t = document.getElementById("bitTarget");
+  if (t) t.textContent = v;
 };
 document.getElementById("logoutBtn").onclick = () => { localStorage.removeItem(KEY); renderMeta(); };
 document.getElementById("accountSel").onchange = (e) => { const s = session(); if (s) saveSession({ ...s, adAccountId: e.target.value }); };
@@ -319,6 +358,31 @@ document.getElementById("adBody").addEventListener("input", () => {
 document.getElementById("publishBtn").onclick = async () => {
   const box = document.getElementById("pubMsg");
   box.innerHTML = "";
+  if (!state.media) {
+    box.innerHTML = '<div class="err">חסר קישור לשיר או לפלייליסט.</div>';
+    return;
+  }
+  const text = orderText();
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    /* ignore */
+  }
+  box.innerHTML =
+    '<div class="ok">ההזמנה נקלטה. העבירו ₪' + totalAmount() +
+    " בביט ללייבל, בתיאור כתבו את שם השיר. סיכום ההזמנה הועתק, שלחו אותו ללייבל אחרי ההעברה.</div>";
+};
+
+document.getElementById("copyBitBtn").onclick = async () => {
+  try { await navigator.clipboard.writeText(bitPayout()); } catch { /* ignore */ }
+};
+document.getElementById("copySumBtn").onclick = async () => {
+  try { await navigator.clipboard.writeText(String(totalAmount())); } catch { /* ignore */ }
+};
+
+document.getElementById("launchMetaBtn").onclick = async () => {
+  const box = document.getElementById("pubMsg");
+  box.innerHTML = "";
   const s = session();
   if (!s || !s.token || !s.adAccountId || !s.pageId) {
     document.getElementById("connectCard").classList.remove("hidden");
@@ -326,6 +390,10 @@ document.getElementById("publishBtn").onclick = async () => {
     return;
   }
   const m = state.media;
+  if (!m) {
+    box.innerHTML = '<div class="err">חסר קישור לשיר.</div>';
+    return;
+  }
   const name = document.getElementById("campName").value.trim() || "MusicBoost";
   const budget = Math.round(state.dailyBudget * 100);
   const targeting = {
@@ -343,7 +411,7 @@ document.getElementById("publishBtn").onclick = async () => {
     const creative = await graph("/act_" + act + "/adcreatives", s.token, { method: "POST", body: { name: name + " Creative", object_story_spec: { page_id: s.pageId, link_data } } });
     await graph("/act_" + act + "/ads", s.token, { method: "POST", body: { name: name + " Ad", adset_id: adset.id, creative: { creative_id: creative.id }, status: "PAUSED" } });
     const href = "https://www.facebook.com/adsmanager/manage/campaigns?act=" + act + "&selected_campaign_ids=" + campaign.id;
-    box.innerHTML = '<div class="ok">הקמפיין נוצר במצב מושהה (מזהה ' + campaign.id + '). <a href="' + href + '" target="_blank" rel="noopener">פתיחה ב Ads Manager</a></div>';
+    box.innerHTML = '<div class="ok">הקמפיין נוצר במצב מושהה. <a href="' + href + '" target="_blank" rel="noopener">פתיחה ב Ads Manager</a></div>';
   } catch (e) { box.innerHTML = '<div class="err">' + e.message + "</div>"; }
 };
 
