@@ -2,6 +2,7 @@ const KEY = "musicboost:meta";
 const BIT_KEY = "musicboost:bit";
 const USER_KEY = "musicboost:user";
 const GOOGLE_KEY = "musicboost:google";
+const GOOGLE_CLIENT_ID = "1014950956396-dk1t721nsh0mln4mkqk24a36liacjvf5.apps.googleusercontent.com";
 const PUBLIC_BIT = "ביט ל 0543462222 בשם Ignite Records";
 const API = "https://graph.facebook.com/v26.0";
 const BUDGETS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
@@ -510,7 +511,7 @@ function paintUser() {
 }
 
 function googleClientId() {
-  return (localStorage.getItem(GOOGLE_KEY) || document.getElementById("googleClient")?.value || "").trim();
+  return (localStorage.getItem(GOOGLE_KEY) || document.getElementById("googleClient")?.value || GOOGLE_CLIENT_ID || "").trim();
 }
 function finishGoogle(profile) {
   if (!profile || !profile.email) throw new Error("גוגל לא החזיר אימייל");
@@ -596,7 +597,9 @@ document.getElementById("saveGoogleBtn").onclick = () => {
   if (v) localStorage.setItem(GOOGLE_KEY, v);
 };
 const googleField = document.getElementById("googleClient");
-if (googleField) googleField.value = localStorage.getItem(GOOGLE_KEY) || "";
+const googleField = document.getElementById("googleClient");
+if (googleField) googleField.value = localStorage.getItem(GOOGLE_KEY) || GOOGLE_CLIENT_ID;
+if (!localStorage.getItem(GOOGLE_KEY)) localStorage.setItem(GOOGLE_KEY, GOOGLE_CLIENT_ID);
 
 document.getElementById("loginBtn").onclick = () => {
   const name = document.getElementById("loginName").value.trim();
