@@ -75,7 +75,15 @@
     @keyframes meter { to { width:100%; } }
     .btn.bit { background:#12c8c8; color:#062428; width:100%; font-weight:600; }
     .qr { display:block; width:180px; height:180px; margin:16px auto 0; border-radius:12px; background:#fff; padding:8px; }
-    .or { text-align:center; color:var(--subtle); font-size:12px; margin:16px 0 4px; }
+    body.ops #stepLabel,
+    body.ops .steps,
+    body.ops #step1,
+    body.ops #step2,
+    body.ops #step3,
+    body.ops #step4,
+    body.ops #step5 { display:none !important; }
+    body.ops #loginGate,
+    body.ops #splash { display:none !important; }
   </style>
 </head>
 <body>
@@ -163,8 +171,19 @@
       <button class="btn ghost" id="logoutBtn" type="button" style="margin-top:12px">התנתק</button>
     </div>
     <h3 style="margin:20px 0 8px;font-size:1rem">הזמנות ממתינות</h3>
-    <p class="muted">אחרי שהביט מגיע לוחצים להפעיל את המודעה במטא.</p>
+    <p class="muted">אחרי שהביט מגיע לוחצים ביט הגיע, הפעל קמפיין.</p>
     <div id="ordersBox" style="margin-top:12px"></div>
+    <div class="card" style="margin-top:16px;background:var(--elev)">
+      <p style="margin:0 0 8px;font-weight:600">הוסף הזמנה ידנית</p>
+      <p class="muted">אם האמן שילם ממכשיר אחר, מדביקים כאן קישור וסכום.</p>
+      <label>קישור לשיר</label>
+      <input id="opsUrl" placeholder="יוטיוב או ספוטיפיי" />
+      <label>שם קמפיין</label>
+      <input id="opsTitle" placeholder="שם השיר" />
+      <label>סכום שהגיע בביט</label>
+      <input id="opsAmount" type="number" min="10" step="10" placeholder="70" />
+      <button class="btn" id="opsAddBtn" type="button" style="margin-top:12px">הוסף להזמנות</button>
+    </div>
   </section>
 
   <section class="card" id="step1">
@@ -263,6 +282,6 @@
   </section>
 </main>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="app.js?v=bit7"></script>
+<script src="app.js?v=bit8"></script>
 </body>
 </html>

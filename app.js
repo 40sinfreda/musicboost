@@ -193,6 +193,9 @@ function bitPayout() {
 function totalAmount() {
   return state.dailyBudget * state.days;
 }
+function isOps() {
+  return new URLSearchParams(location.search).get("ops") === "1";
+}
 function isMobile() {
   return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
 }
@@ -215,9 +218,23 @@ function layoutBitPay() {
       : "סורקים את הקוד מתוך ביט במחשב. התשלום ל Ignite Records.";
   }
 }
+function queueCurrentOrder() {
+  if (!state.media) return null;
+  const order = snapshotOrder();
+  const rows = loadOrders().filter((o) => !(o.status === "awaiting_payment" && o.media && o.media.canonicalUrl === order.media.canonicalUrl));
+  rows.unshift(order);
+  writeOrders(rows);
+  renderOrders();
+  return order;
+}
 function openBitPay() {
   const amount = totalAmount();
   try { navigator.clipboard.writeText(String(amount)); } catch { /* ignore */ }
+  const order = snapshotOrder();
+  const rows = loadOrders();
+  rows.unshift(order);
+  writeOrders(rows);
+  renderOrders();
   layoutBitPay();
   if (isMobile()) window.location.href = BIT_ME;
 }
@@ -405,9 +422,51 @@ document.getElementById("studioLink") && (document.getElementById("studioLink").
 if (location.hash === "#studio") {
   history.replaceState(null, "", location.pathname + location.search);
 }
-if (new URLSearchParams(location.search).get("ops") === "1") {
+if (isOps()) {
+  document.body.classList.add("ops");
   document.getElementById("connectCard").classList.remove("hidden");
+  hideSplash();
+  paintUser();
+  renderOrders();
 }
+
+document.getElementById("opsAddBtn") && (document.getElementById("opsAddBtn").onclick = async () => {
+  const url = (document.getElementById("opsUrl").value || "").trim();
+  const title = (document.getElementById("opsTitle").value || "").trim();
+  const amount = Number(document.getElementById("opsAmount").value) || 0;
+  const parsed = parseLink(url);
+  if (!parsed.ok) {
+    document.getElementById("ordersBox").innerHTML = '<div class="err">' + parsed.error + "</div>" + document.getElementById("ordersBox").innerHTML;
+    return;
+  }
+  let media = { ...parsed.data, title: title || (parsed.data.contentType === "playlist" ? "פלייליסט" : "שיר"), author: "" };
+  try { media = await fetchMeta(media); } catch { /* keep parsed */ }
+  if (title) media.title = title;
+  const order = {
+    id: "ord_" + Date.now(),
+    createdAt: new Date().toISOString(),
+    status: "awaiting_payment",
+    title: title || media.title || "MusicBoost",
+    artist: media.author || "",
+    email: "",
+    amount: amount || 70,
+    dailyBudget: Math.min(100, Math.max(10, amount || 70)),
+    days: 1,
+    countries: ["IL"],
+    continent: "IL_FOCUS",
+    gender: "all",
+    ageMin: 18,
+    ageMax: 34,
+    adTitle: title || media.title || "MusicBoost",
+    adBody: "",
+    cta: "LISTEN_NOW",
+    media,
+  };
+  const rows = loadOrders();
+  rows.unshift(order);
+  writeOrders(rows);
+  renderOrders();
+});
 
 async function runDetect(raw) {
   hide("detectErr");
@@ -604,6 +663,12 @@ function paintUser() {
   const chip = document.getElementById("userChip");
   const out = document.getElementById("logoutBtnTop");
   const gate = document.getElementById("loginGate");
+  if (isOps()) {
+    if (chip) chip.textContent = "סטודיו";
+    gate && gate.classList.add("hidden");
+    out && out.classList.add("hidden");
+    return;
+  }
   if (user && user.email) {
     if (chip) chip.textContent = user.name || user.email;
     out && out.classList.remove("hidden");

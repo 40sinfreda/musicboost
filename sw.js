@@ -2,7 +2,7 @@ const CACHE = "musicboost-v1";
 const ASSETS = [
   "./",
   "./index.html",
-  "./app.js?v=bit7",
+  "./app.js?v=bit8",
   "./manifest.webmanifest",
   "./public/icons/icon-192.png",
   "./public/icons/icon-512.png",
