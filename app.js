@@ -3,6 +3,9 @@ const BIT_KEY = "musicboost:bit";
 const USER_KEY = "musicboost:user";
 const GOOGLE_KEY = "musicboost:google";
 const ORDERS_KEY = "musicboost:orders";
+const ORDERS_REMOTE = "https://rentry.co/kmn2ogaq";
+const ORDERS_EDIT = "https://rentry.co/api/edit/kmn2ogaq";
+const ORDERS_CODE = "9Zwsnoif";
 const GOOGLE_CLIENT_ID = "1014950956396-dk1t721nsh0mln4mkqk24a36liacjvf5.apps.googleusercontent.com";
 const PUBLIC_BIT = "ביט ל Ignite Records";
 const BIT_PHONE = "0543462222";
@@ -225,6 +228,7 @@ function queueCurrentOrder() {
   rows.unshift(order);
   writeOrders(rows);
   renderOrders();
+  void syncOrders(order);
   return order;
 }
 function openBitPay() {
@@ -257,6 +261,54 @@ function loadOrders() {
 function writeOrders(list) {
   localStorage.setItem(ORDERS_KEY, JSON.stringify(list));
 }
+function parseRemoteOrders(html) {
+  const start = String(html).indexOf('{"orders":');
+  if (start < 0) return [];
+  let depth = 0;
+  for (let i = start; i < html.length; i++) {
+    if (html[i] === "{") depth++;
+    if (html[i] === "}") {
+      depth--;
+      if (depth === 0) {
+        try {
+          return JSON.parse(html.slice(start, i + 1)).orders || [];
+        } catch {
+          return [];
+        }
+      }
+    }
+  }
+  return [];
+}
+function mergeOrders(a, b) {
+  const map = new Map();
+  [].concat(a || [], b || []).forEach((o) => {
+    if (o && o.id) map.set(o.id, o);
+  });
+  return Array.from(map.values()).sort((x, y) => String(y.createdAt || "").localeCompare(String(x.createdAt || "")));
+}
+async function fetchRemoteOrders() {
+  const res = await fetch(ORDERS_REMOTE + "?t=" + Date.now(), { cache: "no-store" });
+  if (!res.ok) throw new Error("לא ניתן לטעון הזמנות");
+  return parseRemoteOrders(await res.text());
+}
+async function pushRemoteOrders(list) {
+  const body = new URLSearchParams();
+  body.set("edit_code", ORDERS_CODE);
+  body.set("text", JSON.stringify({ orders: (list || []).slice(0, 40) }));
+  const res = await fetch(ORDERS_EDIT, { method: "POST", body });
+  if (!res.ok) throw new Error("לא ניתן לשמור הזמנה");
+}
+async function syncOrders(extra) {
+  const local = loadOrders();
+  let remote = [];
+  try { remote = await fetchRemoteOrders(); } catch { /* keep local */ }
+  const merged = mergeOrders(mergeOrders(local, remote), extra ? [extra] : []);
+  writeOrders(merged);
+  try { await pushRemoteOrders(merged); } catch { /* keep local */ }
+  renderOrders();
+  return merged;
+}
 function snapshotOrder() {
   const m = state.media || {};
   const user = loadUser() || {};
@@ -287,7 +339,7 @@ function renderOrders() {
   if (!box) return;
   const rows = loadOrders();
   if (!rows.length) {
-    box.innerHTML = '<p class="muted">אין הזמנות ממתינות בדפדפן הזה.</p>';
+    box.innerHTML = '<p class="muted">אין הזמנות עדיין. אחרי שאמן לוחץ שלם בביט או העברתי בביט, ההזמנה תופיע כאן אוטומטית.</p>';
     return;
   }
   box.innerHTML = rows.map((o) => {
@@ -428,8 +480,11 @@ if (isOps()) {
   hideSplash();
   paintUser();
   renderOrders();
+  void syncOrders();
+  window.setInterval(() => { void syncOrders(); }, 8000);
 }
 
+document.getElementById("opsRefreshBtn") && (document.getElementById("opsRefreshBtn").onclick = () => { void syncOrders(); });
 document.getElementById("opsAddBtn") && (document.getElementById("opsAddBtn").onclick = async () => {
   const url = (document.getElementById("opsUrl").value || "").trim();
   const title = (document.getElementById("opsTitle").value || "").trim();
@@ -466,6 +521,7 @@ document.getElementById("opsAddBtn") && (document.getElementById("opsAddBtn").on
   rows.unshift(order);
   writeOrders(rows);
   renderOrders();
+  void syncOrders(order);
 });
 
 async function runDetect(raw) {
@@ -631,11 +687,13 @@ async function launchOrder(id) {
     order.error = "";
     writeOrders(rows);
     renderOrders();
+    void syncOrders(order);
   } catch (e) {
     order.status = "failed";
     order.error = e.message || "ההפעלה נכשלה";
     writeOrders(rows);
     renderOrders();
+    void syncOrders(order);
   }
 }
 

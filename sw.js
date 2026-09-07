@@ -1,8 +1,8 @@
-const CACHE = "musicboost-v1";
+const CACHE = "musicboost-v9";
 const ASSETS = [
   "./",
   "./index.html",
-  "./app.js?v=bit8",
+  "./app.js?v=bit9",
   "./manifest.webmanifest",
   "./public/icons/icon-192.png",
   "./public/icons/icon-512.png",
