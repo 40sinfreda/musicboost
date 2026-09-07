@@ -3,8 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MusicBoost Ignite Records</title>
-  <meta name="theme-color" content="#14080c" />
+  <title>MusicBoost</title>
+  <meta name="application-name" content="MusicBoost" />
+  <meta name="apple-mobile-web-app-title" content="MusicBoost" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#ff4d3d" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" href="public/icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="public/icons/apple-touch-icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
@@ -20,7 +27,7 @@
     header { border-bottom:1px solid var(--border); background:var(--bg); }
     .wrap { max-width:760px; margin:0 auto; padding:16px; }
     .brand { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-    .logo { width:40px; height:40px; border-radius:12px; background:var(--accent); color:var(--accent-fg); display:grid; place-items:center; font-weight:700; }
+    .logo { width:40px; height:40px; border-radius:12px; object-fit:cover; background:var(--accent); }
     h1 { font-size:1.75rem; margin:1.5rem 0 .5rem; }
     p.lead { color:var(--muted); line-height:1.6; }
     .card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:20px; margin-top:20px; }
@@ -73,7 +80,7 @@
 <body>
 <div id="splash">
   <div class="mark">
-    <div class="blob">MB</div>
+    <div class="blob"><img src="public/icons/icon-192.png" alt="MusicBoost" style="width:100%;height:100%;border-radius:18px" /></div>
     <p style="margin:18px 0 4px;font-size:1.4rem;font-weight:600">MusicBoost</p>
     <p class="muted" style="margin:0">Ignite Records</p>
     <div class="meter" aria-hidden="true"><i></i></div>
@@ -82,7 +89,7 @@
 </div>
 <div id="loginGate">
   <div class="box">
-    <div class="logo" style="margin-bottom:16px">MB</div>
+    <img class="logo" src="public/icons/icon-192.png" alt="MusicBoost" style="margin-bottom:16px" />
     <h1 style="margin:0 0 8px">כניסה</h1>
     <p class="lead" style="margin-top:0">כניסה עם Google, או עם שם ואימייל.</p>
     <button class="btn google" id="googleBtn" type="button">
@@ -102,12 +109,14 @@
     <input id="loginEmail" type="email" placeholder="name@email.com" />
     <div id="loginErr" class="hidden" style="margin-top:12px"></div>
     <button class="btn" id="loginBtn" type="button" style="width:100%;margin-top:16px">כניסה</button>
+    <button class="btn ghost hidden" id="installBtnLogin" type="button" style="width:100%;margin-top:10px">התקן את MusicBoost</button>
+    <p id="installHelp" class="muted hidden" style="margin-top:12px">בכרום: תפריט ואז התקן את האפליקציה. השם MusicBoost, הלוגו הוא MB.</p>
   </div>
 </div>
 <header>
   <div class="wrap brand">
     <div style="display:flex;gap:12px;align-items:center">
-      <div class="logo">MB</div>
+      <img class="logo" src="public/icons/icon-192.png" alt="MusicBoost" />
       <div>
         <div style="font-weight:600">MusicBoost</div>
         <div class="muted">Ignite Records קידום יוטיוב וספוטיפיי</div>
@@ -115,6 +124,7 @@
     </div>
     <div class="row" style="align-items:center">
       <span class="muted" id="userChip"></span>
+      <button class="btn ghost hidden" id="installBtn" type="button">התקן</button>
       <button class="btn ghost hidden" id="logoutBtnTop" type="button">יציאה</button>
     </div>
   </div>
@@ -248,6 +258,6 @@
   </section>
 </main>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="app.js?v=bit4"></script>
+<script src="app.js?v=bit5"></script>
 </body>
 </html>

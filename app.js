@@ -639,3 +639,40 @@ window.setTimeout(() => {
   hideSplash();
   paintUser();
 }, 2000);
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./sw.js").catch(() => undefined);
+}
+let installEvent = null;
+function showInstallButtons() {
+  ["installBtn", "installBtnLogin"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove("hidden");
+  });
+}
+function hideInstallButtons() {
+  ["installBtn", "installBtnLogin"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add("hidden");
+  });
+}
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  installEvent = e;
+  showInstallButtons();
+});
+window.addEventListener("appinstalled", hideInstallButtons);
+async function installApp() {
+  if (installEvent) {
+    installEvent.prompt();
+    await installEvent.userChoice;
+    installEvent = null;
+    hideInstallButtons();
+    return;
+  }
+  const help = document.getElementById("installHelp");
+  if (help) help.classList.remove("hidden");
+}
+document.getElementById("installBtn") && (document.getElementById("installBtn").onclick = () => void installApp());
+document.getElementById("installBtnLogin") && (document.getElementById("installBtnLogin").onclick = () => void installApp());
+if (!window.matchMedia("(display-mode: standalone)").matches) showInstallButtons();
