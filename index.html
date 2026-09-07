@@ -59,9 +59,10 @@
     .kv dt { color:var(--muted); } .kv dd { margin:0; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .hidden { display:none !important; }
     #splash {
-      position:fixed; inset:0; z-index:50; display:grid; place-items:center; background:var(--bg);
-      animation: splash-leave 2.1s cubic-bezier(.22,1,.36,1) forwards;
+      position:fixed; inset:0; z-index:70; display:grid; place-items:center; background:var(--bg);
     }
+    #splash.auto { animation: splash-leave 2.1s cubic-bezier(.22,1,.36,1) forwards; }
+    #splash .splash-actions { width:min(280px, 86vw); margin:22px auto 0; display:flex; flex-direction:column; gap:8px; }
     #splash .mark { text-align:center; animation: splash-mark .5s cubic-bezier(.22,1,.36,1); }
     #splash .blob { width:64px; height:64px; margin:0 auto; border-radius:18px; background:var(--accent); color:var(--accent-fg); display:grid; place-items:center; font-size:28px; font-weight:700; box-shadow:0 12px 40px rgba(255,77,61,.35); }
     .meter { width:168px; height:4px; margin:22px auto 0; background:var(--elev); border-radius:999px; overflow:hidden; }
@@ -83,8 +84,13 @@
     <div class="blob"><img src="public/icons/icon-192.png" alt="MusicBoost" style="width:100%;height:100%;border-radius:18px" /></div>
     <p style="margin:18px 0 4px;font-size:1.4rem;font-weight:600">MusicBoost</p>
     <p class="muted" style="margin:0">Ignite Records</p>
-    <div class="meter" aria-hidden="true"><i></i></div>
-    <p class="muted" style="margin:10px 0 0">טוען</p>
+    <div class="meter" id="splashMeter" aria-hidden="true"><i></i></div>
+    <p class="muted" id="splashStatus" style="margin:10px 0 0">טוען</p>
+    <div class="splash-actions">
+      <button class="btn hidden" id="splashInstall" type="button">התקן את MusicBoost</button>
+      <button class="btn ghost hidden" id="splashContinue" type="button">המשך</button>
+      <p id="splashInstallHelp" class="muted hidden" style="margin:8px 0 0">בכרום: תפריט ואז התקן את האפליקציה. באייפון: שתף ואז הוסף למסך הבית.</p>
+    </div>
   </div>
 </div>
 <div id="loginGate">
@@ -109,8 +115,6 @@
     <input id="loginEmail" type="email" placeholder="name@email.com" />
     <div id="loginErr" class="hidden" style="margin-top:12px"></div>
     <button class="btn" id="loginBtn" type="button" style="width:100%;margin-top:16px">כניסה</button>
-    <button class="btn ghost hidden" id="installBtnLogin" type="button" style="width:100%;margin-top:10px">התקן את MusicBoost</button>
-    <p id="installHelp" class="muted hidden" style="margin-top:12px">בכרום: תפריט ואז התקן את האפליקציה. השם MusicBoost, הלוגו הוא MB.</p>
   </div>
 </div>
 <header>
@@ -124,7 +128,6 @@
     </div>
     <div class="row" style="align-items:center">
       <span class="muted" id="userChip"></span>
-      <button class="btn ghost hidden" id="installBtn" type="button">התקן</button>
       <button class="btn ghost hidden" id="logoutBtnTop" type="button">יציאה</button>
     </div>
   </div>
@@ -247,8 +250,8 @@
     <dl id="summary"></dl>
     <div class="card" style="margin-top:16px;background:var(--elev)">
       <button class="btn bit" id="payBitBtn" type="button">שלם בביט</button>
-      <p id="bitHint" class="muted" style="text-align:center;margin:12px 0 0">פתחו ביט וסרקו. בלי מספר טלפון על המסך.</p>
-      <img id="bitQr" class="qr" src="public/images/bit-qr.png" alt="קוד לתשלום בביט" />
+      <p id="bitHint" class="muted" style="text-align:center;margin:12px 0 0"></p>
+      <img id="bitQr" class="qr hidden" src="public/images/bit-qr.png" alt="קוד לתשלום בביט" />
     </div>
     <div id="pubMsg"></div>
     <div class="row" style="margin-top:16px;justify-content:flex-end">
@@ -258,6 +261,6 @@
   </section>
 </main>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="app.js?v=bit5"></script>
+<script src="app.js?v=bit6"></script>
 </body>
 </html>

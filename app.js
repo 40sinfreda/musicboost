@@ -192,24 +192,33 @@ function bitPayout() {
 function totalAmount() {
   return state.dailyBudget * state.days;
 }
-function bitPayUrl(amount) {
-  return "https://www.bitpay.co.il/he";
+function isMobile() {
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+}
+function isInstalled() {
+  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+}
+function layoutBitPay() {
+  const mobile = isMobile();
+  const btn = document.getElementById("payBitBtn");
+  const qr = document.getElementById("bitQr");
+  const hint = document.getElementById("bitHint");
+  if (btn) {
+    btn.classList.toggle("hidden", !mobile);
+    btn.textContent = "שלם בביט ₪" + totalAmount();
+  }
+  if (qr) qr.classList.toggle("hidden", mobile);
+  if (hint) {
+    hint.textContent = mobile
+      ? "לוחצים, ביט נפתחת לתשלום ל Ignite Records."
+      : "סורקים את הקוד מתוך ביט במחשב. התשלום ל Ignite Records.";
+  }
 }
 function openBitPay() {
   const amount = totalAmount();
   try { navigator.clipboard.writeText(String(amount)); } catch { /* ignore */ }
-  const qr = document.getElementById("bitQr");
-  if (qr) qr.classList.remove("hidden");
-  const btn = document.getElementById("payBitBtn");
-  if (btn) btn.textContent = "שלם בביט ₪" + amount;
-  const hint = document.getElementById("bitHint");
-  if (hint) {
-    hint.textContent = "הסכום הועתק. בטלפון נפתחת ביט לתשלום. במחשב סורקים את הקוד מתוך ביט.";
-    hint.classList.remove("hidden");
-  }
-  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "")) {
-    window.location.href = BIT_ME;
-  }
+  layoutBitPay();
+  if (isMobile()) window.location.href = BIT_ME;
 }
 function orderText() {
   const m = state.media || {};
@@ -260,6 +269,7 @@ function setStep(n) {
     renderSummary();
     const btn = document.getElementById("payBitBtn");
     if (btn) btn.textContent = "שלם בביט ₪" + totalAmount();
+    layoutBitPay();
   }
 }
 
@@ -636,6 +646,24 @@ document.getElementById("logoutBtnTop").onclick = () => {
   paintUser();
 };
 window.setTimeout(() => {
+  const splash = document.getElementById("splash");
+  const mobileFresh = isMobile() && !isInstalled();
+  if (mobileFresh) {
+    if (splash) {
+      splash.classList.remove("auto");
+      splash.classList.add("hold");
+    }
+    const meter = document.getElementById("splashMeter");
+    const status = document.getElementById("splashStatus");
+    if (meter) meter.classList.add("hidden");
+    if (status) status.classList.add("hidden");
+    const install = document.getElementById("splashInstall");
+    const cont = document.getElementById("splashContinue");
+    if (install) install.classList.remove("hidden");
+    if (cont) cont.classList.remove("hidden");
+    return;
+  }
+  if (splash) splash.classList.add("auto");
   hideSplash();
   paintUser();
 }, 2000);
@@ -644,35 +672,31 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("./sw.js").catch(() => undefined);
 }
 let installEvent = null;
-function showInstallButtons() {
-  ["installBtn", "installBtnLogin"].forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) el.classList.remove("hidden");
-  });
-}
-function hideInstallButtons() {
-  ["installBtn", "installBtnLogin"].forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) el.classList.add("hidden");
-  });
+async function installApp() {
+  if (installEvent) {
+    installEvent.prompt();
+    const choice = await installEvent.userChoice;
+    installEvent = null;
+    if (choice && choice.outcome === "accepted") {
+      hideSplash();
+      paintUser();
+    }
+    return;
+  }
+  const help = document.getElementById("splashInstallHelp");
+  if (help) help.classList.remove("hidden");
 }
 window.addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();
   installEvent = e;
-  showInstallButtons();
 });
-window.addEventListener("appinstalled", hideInstallButtons);
-async function installApp() {
-  if (installEvent) {
-    installEvent.prompt();
-    await installEvent.userChoice;
-    installEvent = null;
-    hideInstallButtons();
-    return;
-  }
-  const help = document.getElementById("installHelp");
-  if (help) help.classList.remove("hidden");
-}
-document.getElementById("installBtn") && (document.getElementById("installBtn").onclick = () => void installApp());
-document.getElementById("installBtnLogin") && (document.getElementById("installBtnLogin").onclick = () => void installApp());
-if (!window.matchMedia("(display-mode: standalone)").matches) showInstallButtons();
+window.addEventListener("appinstalled", () => {
+  hideSplash();
+  paintUser();
+});
+document.getElementById("splashInstall") && (document.getElementById("splashInstall").onclick = () => void installApp());
+document.getElementById("splashContinue") && (document.getElementById("splashContinue").onclick = () => {
+  hideSplash();
+  paintUser();
+});
+layoutBitPay();
