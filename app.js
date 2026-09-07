@@ -2,6 +2,7 @@ const KEY = "musicboost:meta";
 const BIT_KEY = "musicboost:bit";
 const USER_KEY = "musicboost:user";
 const GOOGLE_KEY = "musicboost:google";
+const ORDERS_KEY = "musicboost:orders";
 const GOOGLE_CLIENT_ID = "1014950956396-dk1t721nsh0mln4mkqk24a36liacjvf5.apps.googleusercontent.com";
 const PUBLIC_BIT = "ביט ל Ignite Records";
 const BIT_PHONE = "0543462222";
@@ -233,6 +234,57 @@ function orderText() {
   ].filter(Boolean).join("\n");
 }
 
+function loadOrders() {
+  try { return JSON.parse(localStorage.getItem(ORDERS_KEY) || "[]"); } catch { return []; }
+}
+function writeOrders(list) {
+  localStorage.setItem(ORDERS_KEY, JSON.stringify(list));
+}
+function snapshotOrder() {
+  const m = state.media || {};
+  const user = loadUser() || {};
+  const camp = document.getElementById("campName");
+  return {
+    id: "ord_" + Date.now(),
+    createdAt: new Date().toISOString(),
+    status: "awaiting_payment",
+    title: (camp && camp.value.trim()) || m.title || "MusicBoost",
+    artist: user.name || m.author || "",
+    email: user.email || "",
+    amount: totalAmount(),
+    dailyBudget: state.dailyBudget,
+    days: state.days,
+    countries: (state.countries || []).slice(),
+    continent: state.continent,
+    gender: state.gender,
+    ageMin: Number((document.getElementById("ageMin") || {}).value) || 18,
+    ageMax: Number((document.getElementById("ageMax") || {}).value) || 34,
+    adTitle: (document.getElementById("adTitle") || {}).value || "",
+    adBody: (document.getElementById("adBody") || {}).value || "",
+    cta: (document.getElementById("cta") || {}).value || "LISTEN_NOW",
+    media: m,
+  };
+}
+function renderOrders() {
+  const box = document.getElementById("ordersBox");
+  if (!box) return;
+  const rows = loadOrders();
+  if (!rows.length) {
+    box.innerHTML = '<p class="muted">אין הזמנות ממתינות בדפדפן הזה.</p>';
+    return;
+  }
+  box.innerHTML = rows.map((o) => {
+    const st = o.status === "live" ? "הופעל במטא" : o.status === "failed" ? "נכשל" : "ממתין לאישור ביט";
+    return '<div class="card" style="margin-top:10px;background:var(--elev)">' +
+      '<p style="margin:0;font-weight:600">' + esc(o.title) + "</p>" +
+      '<p class="muted" style="margin:4px 0 0">' + esc(o.artist) + " · ₪" + o.amount + " · " + st + "</p>" +
+      (o.href ? '<p style="margin:8px 0 0"><a href="' + o.href + '" target="_blank" rel="noopener">פתיחה ב Ads Manager</a></p>' : "") +
+      (o.error ? '<div class="err" style="margin-top:8px">' + esc(o.error) + "</div>" : "") +
+      (o.status !== "live" ? '<button class="btn" data-launch="' + o.id + '" type="button" style="margin-top:12px">ביט הגיע, הפעל קמפיין</button>' : "") +
+      "</div>";
+  }).join("");
+}
+
 function renderMeta() {
   const s = session();
   const box = document.getElementById("connectedBox");
@@ -244,6 +296,7 @@ function renderMeta() {
     box.classList.add("hidden");
     if (launch) launch.classList.add("hidden");
     if (studio) studio.textContent = "סטודיו";
+    renderOrders();
     return;
   }
   if (studio) studio.textContent = "סטודיו";
@@ -253,6 +306,7 @@ function renderMeta() {
   document.getElementById("accountSel").innerHTML = (s.accounts || []).map((x) => '<option value="' + x.id + '"' + (x.id === s.adAccountId ? " selected" : "") + ">" + x.name + (x.currency ? " " + x.currency : "") + "</option>").join("");
   const p = document.getElementById("pageSel");
   p.innerHTML = (s.pages || []).length ? s.pages.map((x) => '<option value="' + x.id + '"' + (x.id === s.pageId ? " selected" : "") + ">" + x.name + "</option>").join("") : '<option value="">אין דף</option>';
+  renderOrders();
 }
 
 function setStep(n) {
@@ -459,8 +513,13 @@ document.getElementById("publishBtn").onclick = async () => {
   } catch {
     /* ignore */
   }
+  const order = snapshotOrder();
+  const rows = loadOrders();
+  rows.unshift(order);
+  writeOrders(rows);
+  renderOrders();
   box.innerHTML =
-    '<div class="ok">ההזמנה נקלטה. אחרי שהתשלום בביט מגיע, הסטודיו מפעיל את המודעה.</div>';
+    '<div class="ok">ההזמנה נקלטה. אחרי שהתשלום בביט מגיע, פותחים סטודיו ולוחצים ביט הגיע, הפעל קמפיין.</div>';
 };
 
 document.getElementById("payBitBtn").onclick = () => openBitPay();
@@ -468,39 +527,58 @@ document.getElementById("copySumBtn") && (document.getElementById("copySumBtn").
   try { await navigator.clipboard.writeText(String(totalAmount())); } catch { /* ignore */ }
 });
 
-document.getElementById("launchMetaBtn").onclick = async () => {
-  const box = document.getElementById("pubMsg");
-  box.innerHTML = "";
+document.getElementById("launchMetaBtn") && (document.getElementById("launchMetaBtn").onclick = async () => {
+  const rows = loadOrders();
+  if (rows[0]) return launchOrder(rows[0].id);
+});
+document.getElementById("ordersBox") && document.getElementById("ordersBox").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-launch]");
+  if (btn) void launchOrder(btn.dataset.launch);
+});
+
+async function launchOrder(id) {
+  const box = document.getElementById("ordersBox");
   const s = session();
   if (!s || !s.token || !s.adAccountId || !s.pageId) {
-    box.innerHTML = '<div class="err">רק הסטודיו מפעיל את המודעה אחרי שהביט מגיע.</div>';
+    if (box) box.insertAdjacentHTML("afterbegin", '<div class="err">תחבר למטא בסטודיו לפני ההפעלה.</div>');
     return;
   }
-  const m = state.media;
-  if (!m) {
-    box.innerHTML = '<div class="err">חסר קישור לשיר.</div>';
+  const rows = loadOrders();
+  const order = rows.find((o) => o.id === id);
+  if (!order || !order.media) {
+    if (box) box.insertAdjacentHTML("afterbegin", '<div class="err">חסרה הזמנה.</div>');
     return;
   }
-  const name = document.getElementById("campName").value.trim() || "MusicBoost";
-  const budget = Math.round(state.dailyBudget * 100);
+  const m = order.media;
+  const name = order.title || "MusicBoost";
+  const budget = Math.round((order.dailyBudget || 10) * 100);
   const targeting = {
-    geo_locations: { countries: state.countries },
-    age_min: Math.max(13, Number(document.getElementById("ageMin").value) || 18),
-    age_max: Math.min(65, Number(document.getElementById("ageMax").value) || 34),
+    geo_locations: { countries: order.countries || ["IL"] },
+    age_min: Math.max(13, order.ageMin || 18),
+    age_max: Math.min(65, order.ageMax || 34),
   };
-  if (state.gender !== "all") targeting.genders = [Number(state.gender)];
+  if (order.gender && order.gender !== "all") targeting.genders = [Number(order.gender)];
   try {
     const act = s.adAccountId.replace(/^act_/, "");
     const campaign = await graph("/act_" + act + "/campaigns", s.token, { method: "POST", body: { name, objective: "OUTCOME_TRAFFIC", status: "PAUSED", special_ad_categories: [] } });
     const adset = await graph("/act_" + act + "/adsets", s.token, { method: "POST", body: { name: name + " AdSet", campaign_id: campaign.id, daily_budget: budget, billing_event: "IMPRESSIONS", optimization_goal: "LINK_CLICKS", bid_strategy: "LOWEST_COST_WITHOUT_CAP", targeting, destination_type: "WEBSITE", status: "PAUSED" } });
-    const link_data = { link: m.canonicalUrl, message: document.getElementById("adBody").value, name: document.getElementById("adTitle").value, call_to_action: { type: document.getElementById("cta").value } };
+    const link_data = { link: m.canonicalUrl, message: order.adBody, name: order.adTitle, call_to_action: { type: order.cta || "LISTEN_NOW" } };
     if (m.thumbnail) link_data.picture = m.thumbnail;
     const creative = await graph("/act_" + act + "/adcreatives", s.token, { method: "POST", body: { name: name + " Creative", object_story_spec: { page_id: s.pageId, link_data } } });
     await graph("/act_" + act + "/ads", s.token, { method: "POST", body: { name: name + " Ad", adset_id: adset.id, creative: { creative_id: creative.id }, status: "PAUSED" } });
     const href = "https://www.facebook.com/adsmanager/manage/campaigns?act=" + act + "&selected_campaign_ids=" + campaign.id;
-    box.innerHTML = '<div class="ok">הקמפיין נוצר במצב מושהה. <a href="' + href + '" target="_blank" rel="noopener">פתיחה ב Ads Manager</a></div>';
-  } catch (e) { box.innerHTML = '<div class="err">' + e.message + "</div>"; }
-};
+    order.status = "live";
+    order.href = href;
+    order.error = "";
+    writeOrders(rows);
+    renderOrders();
+  } catch (e) {
+    order.status = "failed";
+    order.error = e.message || "ההפעלה נכשלה";
+    writeOrders(rows);
+    renderOrders();
+  }
+}
 
 try {
   renderMeta();
