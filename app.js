@@ -5,6 +5,7 @@ const GOOGLE_KEY = "musicboost:google";
 const GOOGLE_CLIENT_ID = "1014950956396-dk1t721nsh0mln4mkqk24a36liacjvf5.apps.googleusercontent.com";
 const PUBLIC_BIT = "ביט ל Ignite Records";
 const BIT_PHONE = "0543462222";
+const BIT_ME = "https://www.bitpay.co.il/app/me/A7E3D590-1B12-BC54-415B-76154338545F862F";
 const API = "https://graph.facebook.com/v26.0";
 const BUDGETS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 const DAYS = [3, 7, 14, 30];
@@ -198,27 +199,16 @@ function openBitPay() {
   const amount = totalAmount();
   try { navigator.clipboard.writeText(String(amount)); } catch { /* ignore */ }
   const qr = document.getElementById("bitQr");
-  if (qr) {
-    qr.src = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" + encodeURIComponent("https://play.google.com/store/apps/details?id=com.bnhp.payments.paymentsapp");
-    qr.classList.remove("hidden");
-  }
+  if (qr) qr.classList.remove("hidden");
   const btn = document.getElementById("payBitBtn");
   if (btn) btn.textContent = "שלם בביט ₪" + amount;
   const hint = document.getElementById("bitHint");
   if (hint) {
-    hint.textContent = "הסכום הועתק. פתחו ביט, העבירו ל Ignite Records, ואז לחצו העברתי בביט.";
+    hint.textContent = "הסכום הועתק. בטלפון נפתחת ביט לתשלום. במחשב סורקים את הקוד מתוך ביט.";
     hint.classList.remove("hidden");
   }
-  const ua = navigator.userAgent || "";
-  const play = "https://play.google.com/store/apps/details?id=com.bnhp.payments.paymentsapp";
-  const ios = "https://apps.apple.com/il/app/id1182007739";
-  if (/Android/i.test(ua)) {
-    window.location.href = "intent://#Intent;package=com.bnhp.payments.paymentsapp;S.browser_fallback_url=" + encodeURIComponent(play) + ";end";
-    return;
-  }
-  if (/iPhone|iPad|iPod/i.test(ua)) {
-    window.location.href = ios;
-    return;
+  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "")) {
+    window.location.href = BIT_ME;
   }
 }
 function orderText() {
